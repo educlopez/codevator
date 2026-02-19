@@ -1,0 +1,15 @@
+{
+  "name": "codevator-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:cli": "pnpm --filter codevator dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter web build",
+    "build:cli": "pnpm --filter codevator build",
+    "test": "pnpm -r test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver"]
+  }
+}
