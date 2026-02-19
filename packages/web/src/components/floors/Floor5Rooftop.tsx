@@ -21,7 +21,7 @@ export function Floor5Rooftop() {
 
       <div className="flex justify-center gap-8 font-mono text-sm">
         <a
-          href="https://github.com/codevator/codevator"
+          href="https://github.com/educlopez/codevator"
           target="_blank"
           rel="noopener noreferrer"
           className="text-lumon-gray hover:text-lumon-green transition-colors"
