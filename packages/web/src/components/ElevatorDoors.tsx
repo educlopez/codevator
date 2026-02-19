@@ -14,6 +14,16 @@ export function ElevatorDoors() {
   const closingRef = useRef(false);
   const scrolledAwayRef = useRef(false);
 
+  // Lock scroll while doors are closed
+  useEffect(() => {
+    if (opened) {
+      document.body.style.overflow = "auto";
+    } else {
+      document.body.style.overflow = "hidden";
+      window.scrollTo(0, 0);
+    }
+  }, [opened]);
+
   const closeElevator = useCallback(() => {
     if (!opened || closingRef.current) return;
     closingRef.current = true;
