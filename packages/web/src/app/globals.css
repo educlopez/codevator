@@ -16,6 +16,7 @@
   --font-display: var(--font-instrument-serif);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-ibm-plex-mono);
+  --font-handwriting: var(--font-caveat);
 }
 
 html {
@@ -28,4 +29,13 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes equalizer {
+  0% {
+    transform: scaleY(var(--eq-scale, 0.15));
+  }
+  100% {
+    transform: scaleY(1);
+  }
 }
