@@ -4,11 +4,13 @@ const MP3_MODES: Mode[] = ["elevator", "typewriter", "ambient"];
 
 let audioCtx: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
+let masterGain: GainNode | null = null;
 let audioEl: HTMLAudioElement | null = null;
 let mediaSource: MediaElementAudioSourceNode | null = null;
 let activeNodes: AudioNode[] = [];
 let activeTimers: ReturnType<typeof setTimeout>[] = [];
 let currentMode: Mode | null = null;
+let muted = false;
 
 /** Call on a user gesture (click/tap) to unlock AudioContext for the session. */
 export function unlockAudio() {
@@ -30,13 +32,23 @@ function getCtx(): AudioContext {
   return audioCtx;
 }
 
+function getMasterGain(): GainNode {
+  const ctx = getCtx();
+  if (!masterGain) {
+    masterGain = ctx.createGain();
+    masterGain.gain.value = muted ? 0 : 1;
+    masterGain.connect(ctx.destination);
+  }
+  return masterGain;
+}
+
 function getAnalyserNode(): AnalyserNode {
   const ctx = getCtx();
   if (!analyser) {
     analyser = ctx.createAnalyser();
     analyser.fftSize = 512;
     analyser.smoothingTimeConstant = 0.82;
-    analyser.connect(ctx.destination);
+    analyser.connect(getMasterGain());
   }
   return analyser;
 }
@@ -240,4 +252,16 @@ export function isAudioPlaying(): boolean {
 
 export function getCurrentMode(): Mode | null {
   return currentMode;
+}
+
+export function toggleMute(): boolean {
+  muted = !muted;
+  if (masterGain) {
+    masterGain.gain.value = muted ? 0 : 1;
+  }
+  return muted;
+}
+
+export function isMuted(): boolean {
+  return muted;
 }
