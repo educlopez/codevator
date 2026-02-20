@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-lumon-green: #0a3d2a;
-  --color-lumon-green-light: #1a6b4a;
-  --color-lumon-mint: #c8e6d4;
-  --color-lumon-bg: #f0f4f0;
-  --color-lumon-cream: #faf8f5;
-  --color-lumon-dark: #1a1a1a;
-  --color-lumon-gray: #6b7280;
-  --color-lumon-sepia: #f5e6d3;
-  --color-lumon-blue: #1a2744;
-  --color-lumon-neon: #a855f7;
-  --color-lumon-white: #fafafa;
+  --color-olive-50: oklch(98.8% 0.003 106.5);
+  --color-olive-100: oklch(96.6% 0.005 106.5);
+  --color-olive-200: oklch(93% 0.007 106.5);
+  --color-olive-300: oklch(88% 0.011 106.6);
+  --color-olive-400: oklch(73.7% 0.021 106.9);
+  --color-olive-500: oklch(58% 0.031 107.3);
+  --color-olive-600: oklch(46.6% 0.025 107.3);
+  --color-olive-700: oklch(39.4% 0.023 107.4);
+  --color-olive-800: oklch(28.6% 0.016 107.4);
+  --color-olive-900: oklch(22.8% 0.013 107.4);
+  --color-olive-950: oklch(15.3% 0.006 107.1);
 
-  --font-serif: var(--font-playfair);
+  --font-display: var(--font-instrument-serif);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-ibm-plex-mono);
 }
 
@@ -22,7 +23,9 @@ html {
 }
 
 body {
-  background: var(--color-lumon-bg);
-  color: var(--color-lumon-dark);
+  background: var(--color-olive-100);
+  color: var(--color-olive-950);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

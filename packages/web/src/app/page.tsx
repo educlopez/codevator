@@ -1,5 +1,6 @@
 "use client";
 
+import { Header } from "@/components/Header";
 import { ElevatorShell } from "@/components/ElevatorShell";
 import { ElevatorDoors } from "@/components/ElevatorDoors";
 import { MuteButton } from "@/components/MuteButton";
@@ -12,6 +13,7 @@ import { Floor5Rooftop } from "@/components/floors/Floor5Rooftop";
 export default function Home() {
   return (
     <main>
+      <Header />
       <MuteButton />
       <ElevatorDoors />
 

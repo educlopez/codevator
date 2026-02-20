@@ -1,5 +1,3 @@
-"use client";
-
 interface ElevatorButtonProps {
   label: string;
   active: boolean;
@@ -16,11 +14,11 @@ export function ElevatorButton({
   return (
     <button
       onClick={onClick}
-      className={`group relative w-16 h-16 rounded-full border-2 transition-all duration-300 flex items-center justify-center font-mono text-xs font-semibold uppercase tracking-wider
+      className={`group relative w-16 h-16 rounded-full border-2 transition-all duration-300 flex items-center justify-center text-xs font-semibold uppercase tracking-wider cursor-pointer
         ${
           active
             ? "border-current shadow-[0_0_20px_currentColor] scale-110"
-            : "border-lumon-gray/40 text-lumon-gray hover:border-lumon-mint hover:text-lumon-mint"
+            : "border-olive-400 text-olive-600 hover:border-olive-600 hover:text-olive-950"
         }`}
       style={active && color ? { color } : undefined}
     >

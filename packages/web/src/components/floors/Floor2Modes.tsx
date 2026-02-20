@@ -62,51 +62,51 @@ export function Floor2Modes() {
   const active = MODES.find((m) => m.id === activeMode);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-8 text-center space-y-10">
-      <div>
-        <p className="font-mono text-xs text-lumon-gray uppercase tracking-[0.3em] mb-4">
-          5 Sound Modes
-        </p>
-        <h2 className="font-serif text-4xl md:text-5xl text-lumon-green">
-          Try them. Pick a favorite.
-        </h2>
-      </div>
-
-      <div className="flex justify-center gap-6 flex-wrap">
-        {MODES.map((mode) => (
-          <div key={mode.id} className="flex flex-col items-center gap-2">
-            <ElevatorButton
-              label={mode.label}
-              active={activeMode === mode.id}
-              onClick={() => handleModeClick(mode.id)}
-              color={mode.color}
-            />
-            <span className="font-mono text-xs text-lumon-gray">
-              {mode.id}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="h-20 flex items-center justify-center">
-        {active ? (
-          <p
-            className="font-serif text-lg transition-all duration-300"
-            style={{ color: active.color }}
-          >
-            {active.description}
+    <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10">
+      <div className="flex flex-col items-center gap-10 sm:gap-16">
+        <div className="flex flex-col items-center gap-6 text-center">
+          <p className="text-sm/7 font-semibold text-olive-700">
+            5 Sound Modes
           </p>
-        ) : (
-          <p className="font-mono text-sm text-lumon-gray">
-            Please try to enjoy each mode equally.
-          </p>
-        )}
-      </div>
+          <h2 className="font-display text-[2rem]/10 sm:text-5xl/14 text-olive-950 tracking-tight text-pretty">
+            Try them. Pick a favorite.
+          </h2>
+        </div>
 
-      <div className="flex justify-center">
+        <div className="flex justify-center gap-6 flex-wrap">
+          {MODES.map((mode) => (
+            <div key={mode.id} className="flex flex-col items-center gap-2">
+              <ElevatorButton
+                label={mode.label}
+                active={activeMode === mode.id}
+                onClick={() => handleModeClick(mode.id)}
+                color={mode.color}
+              />
+              <span className="text-xs text-olive-500">
+                {mode.id}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="h-16 flex items-center justify-center">
+          {active ? (
+            <p
+              className="font-display text-lg italic transition-all duration-300"
+              style={{ color: active.color }}
+            >
+              {active.description}
+            </p>
+          ) : (
+            <p className="text-sm/7 text-olive-600">
+              Please try to enjoy each mode equally.
+            </p>
+          )}
+        </div>
+
         <AudioVisualizer
           active={activeMode !== null}
-          color={active?.color ?? "#0a3d2a"}
+          color={active?.color ?? "#1a6b4a"}
         />
       </div>
     </div>

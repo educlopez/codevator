@@ -1,30 +1,54 @@
 import { TerminalSimulation } from "../TerminalSimulation";
 
+const noisePattern = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="250" height="250" viewBox="0 0 100 100"><filter id="n"><feTurbulence type="turbulence" baseFrequency="1.4" numOctaves="1" seed="2" stitchTiles="stitch" result="n"/><feComponentTransfer result="g"><feFuncR type="linear" slope="4" intercept="1"/><feFuncG type="linear" slope="4" intercept="1"/><feFuncB type="linear" slope="4" intercept="1"/></feComponentTransfer><feColorMatrix type="saturate" values="0" in="g"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>`,
+)}")`;
+
 export function Floor1Welcome() {
   return (
-    <div className="w-full max-w-5xl mx-auto px-8 flex flex-col lg:flex-row items-center gap-12">
-      <div className="flex-1 space-y-6">
-        <div className="font-mono text-xs text-lumon-gray uppercase tracking-[0.3em]">
-          What is Codevator?
+    <div className="w-full max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="relative overflow-hidden rounded-3xl bg-olive-200/60">
+        <div className="flex flex-col lg:flex-row items-center lg:items-stretch" style={{ overflow: "visible" }}>
+          {/* Text */}
+          <div className="w-full lg:w-1/2 flex flex-col justify-center gap-6 p-10 lg:p-16 relative z-10">
+            <div>
+              <p className="text-sm font-semibold text-olive-950 mb-2">
+                What is Codevator?
+              </p>
+              <h2 className="font-display text-3xl md:text-4xl text-olive-700 leading-snug tracking-tight text-pretty">
+                Ambient music while your agent codes — so the silence doesn&apos;t feel so long.
+              </h2>
+            </div>
+            <a
+              href="https://github.com/educlopez/codevator"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-olive-950 hover:text-olive-700 transition-colors mt-auto"
+            >
+              Learn more
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </a>
+          </div>
+
+          {/* Terminal demo with wallpaper background */}
+          <div className="w-full lg:w-1/2 relative overflow-visible">
+            {/* Olive gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#9ca88f] to-[#596352] lg:rounded-l-3xl" />
+            {/* Noise texture overlay */}
+            <div
+              className="absolute inset-0 opacity-30 mix-blend-overlay"
+              style={{ backgroundPosition: "center", backgroundImage: noisePattern }}
+            />
+            {/* Terminal */}
+            <div className="relative z-10 p-6 lg:p-10 flex items-center h-full overflow-visible">
+              <div className="lg:translate-x-12 w-full">
+                <TerminalSimulation />
+              </div>
+            </div>
+          </div>
         </div>
-        <h2 className="font-serif text-4xl md:text-5xl text-lumon-green leading-tight">
-          Your coding agent
-          <br />
-          works in silence.
-        </h2>
-        <p className="font-serif text-xl text-lumon-green/70 leading-relaxed">
-          Codevator plays ambient music while your AI coding agent thinks,
-          writes, and refactors. Five sound modes — from lo-fi elevator
-          to retro 8-bit — so the silence doesn&apos;t feel so long.
-        </p>
-        <div className="border-t border-lumon-green/20 pt-4">
-          <p className="font-mono text-sm text-lumon-gray">
-            Works with Claude Code. Hooks in automatically. Your outie just has to set it up.
-          </p>
-        </div>
-      </div>
-      <div className="flex-1 flex justify-center">
-        <TerminalSimulation />
       </div>
     </div>
   );

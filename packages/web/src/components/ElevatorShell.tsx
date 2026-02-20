@@ -6,11 +6,11 @@ interface ElevatorShellProps {
 
 export function ElevatorShell({ children }: ElevatorShellProps) {
   return (
-    <div>
+    <div className="flex flex-col">
       {children.map((child, i) => (
         <section
           key={i}
-          className="floor-section min-h-screen relative flex items-center justify-center"
+          className="py-16"
         >
           {child}
         </section>
