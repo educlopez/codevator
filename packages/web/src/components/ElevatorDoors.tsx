@@ -1,14 +1,17 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { gsap } from "gsap";
+import type { gsap as GsapType } from "gsap";
+
+let _gsap: typeof GsapType | null = null;
+async function getGsap() {
+  if (!_gsap) _gsap = (await import("gsap")).gsap;
+  return _gsap;
+}
 import { unlockAudio, playMode, stopAudio } from "@/lib/audio";
+import { noisePattern } from "@/lib/patterns";
 import { CopyCommand } from "./CopyCommand";
 import { SoundVisualizer } from "./SoundVisualizer";
-
-const noisePattern = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="250" height="250" viewBox="0 0 100 100"><filter id="n"><feTurbulence type="turbulence" baseFrequency="1.4" numOctaves="1" seed="2" stitchTiles="stitch" result="n"/><feComponentTransfer result="g"><feFuncR type="linear" slope="4" intercept="1"/><feFuncG type="linear" slope="4" intercept="1"/><feFuncB type="linear" slope="4" intercept="1"/></feComponentTransfer><feColorMatrix type="saturate" values="0" in="g"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>`,
-)}")`;
 
 function dispatchElevatorEvent(state: "opened" | "closed") {
   window.dispatchEvent(new CustomEvent("codevator:elevator", { detail: state }));
@@ -46,11 +49,12 @@ export function ElevatorDoors() {
     }
   }, [opened, skipped]);
 
-  const closeElevator = useCallback(() => {
+  const closeElevator = useCallback(async () => {
     if (!opened || closingRef.current) return;
     closingRef.current = true;
 
     stopAudio();
+    const gsap = await getGsap();
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -90,8 +94,9 @@ export function ElevatorDoors() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [opened, skipped, closeElevator]);
 
-  function handleReplayElevator() {
+  async function handleReplayElevator() {
     window.scrollTo({ top: 0 });
+    const gsap = await getGsap();
 
     // Reset all elements to closed-door state
     gsap.set(leftDoorRef.current, { xPercent: 0 });
@@ -105,11 +110,12 @@ export function ElevatorDoors() {
     setOpened(false);
   }
 
-  function handleCallElevator() {
+  async function handleCallElevator() {
     if (opened || closingRef.current) return;
     unlockAudio();
     playMode("elevator");
     sessionStorage.setItem("codevator:seen", "1");
+    const gsap = await getGsap();
 
     const tl = gsap.timeline({
       onComplete: () => setOpened(true),

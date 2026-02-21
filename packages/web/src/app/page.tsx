@@ -1,14 +1,28 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Header } from "@/components/Header";
 import { ElevatorShell } from "@/components/ElevatorShell";
 import { ElevatorDoors } from "@/components/ElevatorDoors";
 import { MuteButton } from "@/components/MuteButton";
 import { Floor1Welcome } from "@/components/floors/Floor1Welcome";
-import { Floor2Modes } from "@/components/floors/Floor2Modes";
-import { Floor3Install } from "@/components/floors/Floor3Install";
-import { Floor4Testimonials } from "@/components/floors/Floor4Testimonials";
-import { Floor5Rooftop } from "@/components/floors/Floor5Rooftop";
+
+const Floor2Modes = dynamic(
+  () => import("@/components/floors/Floor2Modes").then((m) => m.Floor2Modes),
+  { ssr: false },
+);
+const Floor3Install = dynamic(
+  () => import("@/components/floors/Floor3Install").then((m) => m.Floor3Install),
+  { ssr: false },
+);
+const Floor4Testimonials = dynamic(
+  () => import("@/components/floors/Floor4Testimonials").then((m) => m.Floor4Testimonials),
+  { ssr: false },
+);
+const Floor5Rooftop = dynamic(
+  () => import("@/components/floors/Floor5Rooftop").then((m) => m.Floor5Rooftop),
+  { ssr: false },
+);
 
 export default function Home() {
   return (
