@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { gsap as GsapType } from "gsap";
 
 let _gsap: typeof GsapType | null = null;
@@ -8,10 +8,79 @@ async function getGsap() {
   if (!_gsap) _gsap = (await import("gsap")).gsap;
   return _gsap;
 }
-import { unlockAudio, playMode, stopAudio } from "@/lib/audio";
+import { unlockAudio, playMode } from "@/lib/audio";
 import { noisePattern } from "@/lib/patterns";
 import { CopyCommand } from "./CopyCommand";
 import { SoundVisualizer } from "./SoundVisualizer";
+
+function DraggablePostIt({
+  children,
+  className,
+  rotation = 0,
+}: {
+  children: React.ReactNode;
+  className: string;
+  rotation?: number;
+}) {
+  const elRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const posRef = useRef({ x: 0, y: 0 });
+  const startRef = useRef({ x: 0, y: 0 });
+  const offsetRef = useRef({ x: 0, y: 0 });
+
+  function updateTransform() {
+    if (!elRef.current) return;
+    const { x, y } = posRef.current;
+    elRef.current.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.preventDefault();
+    draggingRef.current = true;
+    startRef.current = { x: e.clientX, y: e.clientY };
+    offsetRef.current = { ...posRef.current };
+    elRef.current?.setPointerCapture(e.pointerId);
+    if (elRef.current) {
+      elRef.current.style.cursor = "grabbing";
+      elRef.current.style.zIndex = "50";
+    }
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!draggingRef.current) return;
+    posRef.current = {
+      x: offsetRef.current.x + (e.clientX - startRef.current.x),
+      y: offsetRef.current.y + (e.clientY - startRef.current.y),
+    };
+    updateTransform();
+  }
+
+  function handlePointerUp() {
+    draggingRef.current = false;
+    if (elRef.current) {
+      elRef.current.style.cursor = "grab";
+      elRef.current.style.zIndex = "";
+    }
+  }
+
+  return (
+    <div
+      ref={elRef}
+      className={className}
+      style={{
+        transform: `rotate(${rotation}deg)`,
+        cursor: "grab",
+        touchAction: "none",
+        userSelect: "none",
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {children}
+    </div>
+  );
+}
 
 function dispatchElevatorEvent(state: "opened" | "closed") {
   window.dispatchEvent(new CustomEvent("codevator:elevator", { detail: state }));
@@ -28,7 +97,6 @@ export function ElevatorDoors() {
   const [opened, setOpened] = useState(false);
   const [skipped, setSkipped] = useState(false);
   const closingRef = useRef(false);
-  const scrolledAwayRef = useRef(false);
 
   // Skip animation for returning visitors this session
   useEffect(() => {
@@ -48,51 +116,6 @@ export function ElevatorDoors() {
       dispatchElevatorEvent("closed");
     }
   }, [opened, skipped]);
-
-  const closeElevator = useCallback(async () => {
-    if (!opened || closingRef.current) return;
-    closingRef.current = true;
-
-    stopAudio();
-    const gsap = await getGsap();
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        setOpened(false);
-        closingRef.current = false;
-        scrolledAwayRef.current = false;
-      },
-    });
-
-    tl.to(interiorRef.current, { opacity: 0, y: 20, duration: 0.4, ease: "power2.in" }, 0);
-    tl.to(leftDoorRef.current, { xPercent: 0, duration: 1.2, ease: "power2.inOut" }, 0.2);
-    tl.to(rightDoorRef.current, { xPercent: 0, duration: 1.2, ease: "power2.inOut" }, 0.2);
-    tl.to(frameRef.current, { opacity: 1, duration: 0.6, ease: "power2.out" }, 0.4);
-    tl.to(indicatorRef.current, { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.6);
-    tl.set(overlayRef.current, { pointerEvents: "auto" }, 1.0);
-    tl.to(overlayRef.current, { opacity: 1, duration: 0.4, ease: "power2.out" }, 1.0);
-  }, [opened]);
-
-  useEffect(() => {
-    if (!opened || skipped) return;
-
-    function handleScroll() {
-      const container = containerRef.current;
-      if (!container) return;
-      const rect = container.getBoundingClientRect();
-
-      if (rect.top < -300) {
-        scrolledAwayRef.current = true;
-      }
-
-      if (scrolledAwayRef.current && rect.top > -100) {
-        closeElevator();
-      }
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [opened, skipped, closeElevator]);
 
   async function handleReplayElevator() {
     window.scrollTo({ top: 0 });
@@ -263,7 +286,7 @@ export function ElevatorDoors() {
         </button>
 
         {/* Post-it note — top */}
-        <div className="absolute left-6 right-6 top-[8%] sm:top-[28%] sm:left-auto sm:right-16 rotate-2 w-auto sm:w-64 p-4 sm:p-6 bg-amber-100 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40">
+        <DraggablePostIt className="absolute left-6 right-6 top-[8%] sm:top-[28%] sm:left-auto sm:right-16 w-auto sm:w-64 p-4 sm:p-6 bg-amber-100 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40" rotation={2}>
           <p className="font-handwriting text-lg sm:text-2xl leading-relaxed text-amber-950/80">
             Welcome to Codevator.
             <br />
@@ -273,10 +296,10 @@ export function ElevatorDoors() {
           <p className="font-handwriting text-sm sm:text-base text-amber-800/50 mt-3 text-right">
             — Mgmt.
           </p>
-        </div>
+        </DraggablePostIt>
 
         {/* Post-it note — bottom */}
-        <div className="absolute left-6 right-6 bottom-[8%] sm:bottom-auto sm:top-[38%] sm:left-16 sm:right-auto -rotate-3 w-auto sm:w-64 p-4 sm:p-6 bg-yellow-50 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40">
+        <DraggablePostIt className="absolute left-6 right-6 bottom-[8%] sm:bottom-auto sm:top-[38%] sm:left-16 sm:right-auto w-auto sm:w-64 p-4 sm:p-6 bg-yellow-50 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40" rotation={-3}>
           <p className="font-handwriting text-lg sm:text-2xl leading-relaxed text-amber-950/80">
             &ldquo;You miss 100% of the elevator music you don&rsquo;t play.&rdquo;
           </p>
@@ -286,7 +309,7 @@ export function ElevatorDoors() {
           <p className="font-handwriting text-sm sm:text-base text-amber-950/40 text-right">
             &nbsp;&nbsp;&nbsp;— Michael Scott
           </p>
-        </div>
+        </DraggablePostIt>
       </div>
     </div>
   );
