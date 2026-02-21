@@ -10,7 +10,7 @@ export function ElevatorShell({ children }: ElevatorShellProps) {
       {children.map((child, i) => (
         <section
           key={i}
-          className="py-16"
+          className={i === children.length - 1 ? "pt-16 pb-0" : "py-16"}
         >
           {child}
         </section>

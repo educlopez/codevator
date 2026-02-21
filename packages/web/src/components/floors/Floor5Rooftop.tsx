@@ -1,48 +1,104 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { CopyCommand } from "../CopyCommand";
 
 export function Floor5Rooftop() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const video = videoRef.current;
+    if (!container || !video) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.src = "/codevator-character.mp4";
+          video.load();
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10">
-      <div className="flex flex-col items-center gap-10 sm:gap-16">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <p className="text-sm/7 font-semibold text-olive-700">
-            Ready?
-          </p>
-          <h2 className="font-display text-5xl/12 sm:text-[5rem]/20 text-olive-950 tracking-tight text-balance">
-            Exit the elevator.
-          </h2>
-          <p className="font-display text-2xl/8 text-olive-600 italic">
-            Start building.
-          </p>
-        </div>
+    <div ref={containerRef} className="relative overflow-hidden">
+      {/* Blurred placeholder — visible until video is ready */}
+      <img
+        src="/codevator-character-blur.jpeg"
+        alt=""
+        aria-hidden
+        className={`absolute inset-0 w-full h-full object-cover scale-125 origin-center translate-x-[3%] translate-y-[5%] transition-opacity duration-700 ${videoReady ? "opacity-0" : "opacity-100"}`}
+      />
 
-        <CopyCommand command="npm install -g codevator" />
+      {/* Poster — sharper fallback, fades once video plays */}
+      <img
+        src="/codevator-character-poster.jpeg"
+        alt=""
+        aria-hidden
+        className={`w-full block scale-125 origin-center translate-x-[3%] translate-y-[5%] transition-opacity duration-700 ${videoReady ? "opacity-0" : "opacity-100"}`}
+      />
 
-        <div className="flex justify-center gap-8 text-sm/7 font-medium">
-          <a
-            href="https://github.com/educlopez/codevator"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-olive-700 hover:text-olive-950 transition-colors"
-          >
-            GitHub
-          </a>
-          <a
-            href="https://www.npmjs.com/package/codevator"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-olive-700 hover:text-olive-950 transition-colors"
-          >
-            npm
-          </a>
-        </div>
+      {/* Video — loaded lazily, fades in when canplay fires */}
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="none"
+        onCanPlay={() => setVideoReady(true)}
+        className={`absolute inset-0 w-full h-full object-cover scale-125 origin-center translate-x-[3%] translate-y-[5%] transition-opacity duration-700 ${videoReady ? "opacity-100" : "opacity-0"}`}
+      />
 
-        <div className="pt-10 border-t border-olive-950/10 w-full text-center">
-          <p className="font-display text-lg text-olive-600 italic">
-            &ldquo;The music stops when the work is done.
-            <br />
-            The work is never done.&rdquo;
-          </p>
+      {/* Gradient from site bg into video */}
+      <div className="absolute inset-x-0 top-0 h-60 bg-gradient-to-b from-olive-100 to-transparent pointer-events-none z-10" />
+
+      {/* Content overlay */}
+      <div className="absolute inset-0 z-20 flex items-center justify-center -translate-y-[10%]">
+        <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10">
+          <div className="flex flex-col items-center gap-6 sm:gap-8">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <p className="text-sm/7 font-semibold text-olive-700">
+                Ready?
+              </p>
+              <h2 className="font-display text-5xl/12 sm:text-[5rem]/20 text-olive-950 tracking-tight text-balance">
+                Exit the elevator.
+              </h2>
+              <p className="font-display text-2xl/8 text-olive-600 italic">
+                Start building.
+              </p>
+            </div>
+
+            <CopyCommand command="npm install -g codevator" />
+
+            <div className="flex justify-center gap-8 text-sm/7 font-medium">
+              <a
+                href="https://github.com/educlopez/codevator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-olive-700 hover:text-olive-950 transition-colors"
+              >
+                GitHub
+              </a>
+              <a
+                href="https://www.npmjs.com/package/codevator"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-olive-700 hover:text-olive-950 transition-colors"
+              >
+                npm
+              </a>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
