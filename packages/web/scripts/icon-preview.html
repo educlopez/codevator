@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap');
+    body {
+      margin: 0;
+      display: flex;
+      gap: 40px;
+      padding: 40px;
+      background: #e8e7e0;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .preview span {
+      font-family: sans-serif;
+      font-size: 12px;
+      color: #666;
+    }
+    canvas {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="preview">
+    <canvas id="c512" width="512" height="512"></canvas>
+    <span>512x512</span>
+  </div>
+  <div class="preview">
+    <canvas id="c192" width="192" height="192"></canvas>
+    <span>192x192</span>
+  </div>
+  <div class="preview">
+    <canvas id="c180" width="180" height="180"></canvas>
+    <span>180x180 (apple)</span>
+  </div>
+  <div class="preview">
+    <canvas id="c32" width="32" height="32" style="image-rendering: auto;"></canvas>
+    <span>32x32 (favicon)</span>
+  </div>
+  <div class="preview">
+    <canvas id="c16" width="16" height="16" style="image-rendering: auto;"></canvas>
+    <span>16x16 (favicon)</span>
+  </div>
+
+  <script>
+    function drawIcon(canvas) {
+      const ctx = canvas.getContext('2d');
+      const s = canvas.width;
+      const r = s / 2;
+
+      // Circle with gradient
+      const grad = ctx.createLinearGradient(0, 0, 0, s);
+      grad.addColorStop(0, '#6b7260');
+      grad.addColorStop(0.5, '#565c4c');
+      grad.addColorStop(1, '#4a5040');
+
+      ctx.beginPath();
+      ctx.arc(r, r, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Subtle highlight reflection
+      const hlGrad = ctx.createLinearGradient(s * 0.3, 0, s * 0.7, 0);
+      hlGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.06)');
+      hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+
+      ctx.beginPath();
+      ctx.arc(r, r, r, 0, Math.PI * 2);
+      ctx.fillStyle = hlGrad;
+      ctx.fill();
+
+      // Inner subtle border
+      ctx.beginPath();
+      ctx.arc(r, r, r - 1, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = s > 64 ? 2 : 1;
+      ctx.stroke();
+
+      // Letter C
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const fontSize = Math.round(s * 0.66);
+      ctx.font = `400 ${fontSize}px "Instrument Serif", Georgia, serif`;
+      ctx.fillText('C', r, r + s * 0.03);
+    }
+
+    // Wait for font to load
+    document.fonts.ready.then(() => {
+      ['c512', 'c192', 'c180', 'c32', 'c16'].forEach(id => {
+        drawIcon(document.getElementById(id));
+      });
+      document.title = 'ready';
+    });
+  </script>
+</body>
+</html>
