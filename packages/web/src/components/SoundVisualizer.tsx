@@ -21,7 +21,7 @@ export function SoundVisualizer() {
   const [live, setLive] = useState(false);
 
   useEffect(() => {
-    let freqData: Uint8Array | null = null;
+    let freqData: Uint8Array<ArrayBuffer> | null = null;
     const smoothed = smoothedRef.current;
 
     function tick() {
@@ -31,7 +31,7 @@ export function SoundVisualizer() {
       if (playing !== live) setLive(playing);
 
       if (analyser && playing) {
-        if (!freqData) freqData = new Uint8Array(analyser.frequencyBinCount);
+        if (!freqData) freqData = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
         analyser.getByteFrequencyData(freqData);
 
         for (let i = 0; i < BAR_COUNT; i++) {

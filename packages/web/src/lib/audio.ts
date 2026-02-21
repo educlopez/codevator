@@ -11,6 +11,15 @@ let activeNodes: AudioNode[] = [];
 let activeTimers: ReturnType<typeof setTimeout>[] = [];
 let currentMode: Mode | null = null;
 let muted = false;
+let volume = 0.35;
+
+let _mobile: boolean | null = null;
+function isMobileDevice(): boolean {
+  if (_mobile === null) {
+    _mobile = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+  }
+  return _mobile;
+}
 
 /** Call on a user gesture (click/tap) to unlock AudioContext for the session. */
 export function unlockAudio() {
@@ -36,7 +45,8 @@ function getMasterGain(): GainNode {
   const ctx = getCtx();
   if (!masterGain) {
     masterGain = ctx.createGain();
-    masterGain.gain.value = muted ? 0 : 1;
+    if (isMobileDevice()) muted = true;
+    masterGain.gain.value = muted ? 0 : volume;
     masterGain.connect(ctx.destination);
   }
   return masterGain;
@@ -255,13 +265,31 @@ export function getCurrentMode(): Mode | null {
 }
 
 export function toggleMute(): boolean {
+  if (isMobileDevice()) return true;
   muted = !muted;
   if (masterGain) {
-    masterGain.gain.value = muted ? 0 : 1;
+    masterGain.gain.value = muted ? 0 : volume;
   }
   return muted;
 }
 
 export function isMuted(): boolean {
   return muted;
+}
+
+export function setVolume(v: number) {
+  if (isMobileDevice()) return;
+  volume = Math.max(0, Math.min(1, v));
+  if (volume === 0) {
+    muted = true;
+  } else if (muted) {
+    muted = false;
+  }
+  if (masterGain) {
+    masterGain.gain.value = muted ? 0 : volume;
+  }
+}
+
+export function getVolume(): number {
+  return volume;
 }
