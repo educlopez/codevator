@@ -43,7 +43,7 @@ export function Floor5Rooftop() {
           </p>
         </div>
 
-        <CopyCommand command="npm install -g codevator" />
+        <CopyCommand command="npx codevator" />
 
         <div className="flex justify-center gap-8 text-sm/7 font-medium">
           <a

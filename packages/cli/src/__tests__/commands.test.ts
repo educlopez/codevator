@@ -40,8 +40,8 @@ describe("parseArgs", () => {
     expect(parseArgs(["stop"])).toEqual({ command: "stop", args: [] });
   });
 
-  it("returns help for no args", () => {
-    expect(parseArgs([])).toEqual({ command: "help", args: [] });
+  it("returns setup for no args", () => {
+    expect(parseArgs([])).toEqual({ command: "setup", args: [] });
   });
 
   it("returns help for unknown command", () => {

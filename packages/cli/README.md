@@ -2,16 +2,10 @@
 
 Elevator music for your AI coding agent. Background sounds that play while Claude Code works and stop when it needs your attention.
 
-## Install
+## Quick Start
 
 ```bash
-npm install -g codevator
-```
-
-## Setup
-
-```bash
-codevator setup
+npx codevator
 ```
 
 This installs hooks into Claude Code (`~/.claude/settings.json`) that automatically:
@@ -68,8 +62,7 @@ Setup also installs a Claude Code skill that lets the agent control music direct
 ## Uninstall
 
 ```bash
-codevator uninstall
-npm uninstall -g codevator
+npx codevator uninstall
 ```
 
 ## License

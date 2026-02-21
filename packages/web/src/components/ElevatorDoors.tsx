@@ -186,7 +186,7 @@ export function ElevatorDoors() {
                 </p>
               </div>
             </div>
-            <CopyCommand command="npm install -g codevator" />
+            <CopyCommand command="npx codevator" />
 
             {/* Sound visualizer */}
             <div className="w-full max-w-2xl mt-12">

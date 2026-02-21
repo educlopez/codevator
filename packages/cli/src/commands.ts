@@ -11,7 +11,10 @@ type Command = (typeof VALID_COMMANDS)[number];
 
 export function parseArgs(argv: string[]): { command: Command; args: string[] } {
   const [cmd, ...args] = argv;
-  if (!cmd || !VALID_COMMANDS.includes(cmd as Command)) {
+  if (!cmd) {
+    return { command: "setup", args: [] };
+  }
+  if (!VALID_COMMANDS.includes(cmd as Command)) {
     return { command: "help", args: [] };
   }
   return { command: cmd as Command, args };
@@ -119,14 +122,16 @@ function runUninstall(): void {
 function runHelp(): void {
   console.log(`🛗 Codevator — Elevator music for your AI coding agent
 
-Usage: codevator <command>
+Usage: npx codevator <command>
 
 Commands:
-  setup              Install hooks into Claude Code
+  setup              Install hooks into Claude Code (default)
   mode <name>        Set sound mode (elevator|typewriter|ambient|retro|minimal)
   on                 Enable sounds
   off                Disable sounds
   volume <0-100>     Set volume level
   status             Show current settings
-  uninstall          Remove hooks from Claude Code`);
+  uninstall          Remove hooks from Claude Code
+
+Quick start: npx codevator`);
 }

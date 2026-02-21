@@ -14,8 +14,7 @@ Background sounds that play while Claude Code works and stop when it needs your 
 ## Quick Start
 
 ```bash
-npm install -g codevator
-codevator setup
+npx codevator
 ```
 
 That's it. Next time Claude Code starts working, you'll hear elevator music.
