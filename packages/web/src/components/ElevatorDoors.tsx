@@ -94,16 +94,15 @@ export function ElevatorDoors() {
   const interiorRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
-  const [opened, setOpened] = useState(false);
-  const [skipped, setSkipped] = useState(false);
+  const [opened, setOpened] = useState<boolean | null>(null);
+  const [skipped, setSkipped] = useState<boolean | null>(null);
   const closingRef = useRef(false);
 
   // Skip animation for returning visitors this session
   useEffect(() => {
-    if (sessionStorage.getItem("codevator:seen")) {
-      setSkipped(true);
-      setOpened(true);
-    }
+    const seen = !!sessionStorage.getItem("codevator:seen");
+    setSkipped(seen);
+    setOpened(seen);
   }, []);
 
   useEffect(() => {
@@ -151,6 +150,11 @@ export function ElevatorDoors() {
     tl.to(leftDoorRef.current, { xPercent: -100, duration: 1.4, ease: "power2.inOut" }, 0.2);
     tl.to(rightDoorRef.current, { xPercent: 100, duration: 1.4, ease: "power2.inOut" }, 0.2);
     tl.to(interiorRef.current, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 0.8);
+  }
+
+  // Don't render until we know if returning visitor (prevents flash)
+  if (skipped === null) {
+    return <div id="content" className="relative w-full h-screen overflow-hidden bg-olive-100" />;
   }
 
   return (
