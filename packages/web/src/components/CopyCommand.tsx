@@ -14,6 +14,7 @@ export function CopyCommand({ command }: { command: string }) {
   return (
     <button
       onClick={handleCopy}
+      aria-label={copied ? "Copied!" : `Copy command: ${command}`}
       className="group flex items-center gap-3 rounded-full bg-white/80 border border-olive-950/10 px-6 py-3.5 shadow-sm hover:border-olive-950/20 transition-colors cursor-pointer"
     >
       <span className="font-mono text-olive-950 text-sm flex-1 text-left">

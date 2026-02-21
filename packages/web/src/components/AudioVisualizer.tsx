@@ -128,6 +128,7 @@ export function AudioVisualizer({ active, color }: AudioVisualizerProps) {
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       className="w-full max-w-lg h-28"
       style={{ imageRendering: "auto" }}
     />

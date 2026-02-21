@@ -31,6 +31,33 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-olive-600);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--color-olive-950);
+  color: var(--color-olive-100);
+  border-radius: 0 0 8px 8px;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
 @keyframes equalizer {
   0% {
     transform: scaleY(var(--eq-scale, 0.15));

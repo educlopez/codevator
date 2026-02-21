@@ -1,0 +1,16 @@
+{
+  "name": "Codevator",
+  "short_name": "Codevator",
+  "description": "Elevator music, retro beats, and ambient vibes while your coding agent thinks.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0efe8",
+  "theme_color": "#1e2110",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "256x256",
+      "type": "image/x-icon"
+    }
+  ]
+}

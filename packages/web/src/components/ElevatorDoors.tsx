@@ -131,7 +131,7 @@ export function ElevatorDoors() {
   }
 
   return (
-    <div ref={containerRef} className={`relative w-full h-screen overflow-hidden ${skipped ? "bg-olive-100" : "bg-olive-950"}`}>
+    <div id="content" ref={containerRef} className={`relative w-full h-screen overflow-hidden ${skipped ? "bg-olive-100" : "bg-olive-950"}`}>
       {/* Interior — revealed after doors open */}
       <div className="absolute inset-0 overflow-hidden bg-olive-100">
         <section ref={interiorRef} className={`${skipped ? "" : "opacity-0 translate-y-5"} h-full flex flex-col justify-center`}>
@@ -254,6 +254,7 @@ export function ElevatorDoors() {
       >
         <button
           onClick={handleCallElevator}
+          aria-label="Open elevator doors"
           className="group relative w-20 h-20 rounded-full border-2 border-olive-400/30 bg-olive-950/90 flex items-center justify-center transition-all hover:border-olive-300/60 hover:shadow-[0_0_30px_rgba(200,210,190,0.15)] cursor-pointer backdrop-blur-sm"
         >
           <span className="text-sm text-olive-300 tracking-[0.15em] uppercase group-hover:scale-110 transition-transform font-medium">

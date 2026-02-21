@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter, IBM_Plex_Mono, Caveat } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -29,7 +30,7 @@ const caveat = Caveat({
   display: "swap",
 });
 
-const siteUrl = "https://codevator.com";
+const siteUrl = "https://codevator.dev";
 const title = "Codevator — Elevator music for your AI coding agent";
 const description =
   "Elevator music, retro beats, and ambient vibes while your coding agent thinks. Your AI is working. Enjoy the ride.";
@@ -94,6 +95,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <Analytics />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://codevator.com/sitemap.xml
+Sitemap: https://codevator.dev/sitemap.xml

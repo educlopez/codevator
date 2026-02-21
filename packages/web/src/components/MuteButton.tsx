@@ -92,6 +92,12 @@ export function MuteButton() {
         <div className="bg-olive-950/80 border border-white/10 backdrop-blur-sm rounded-full px-[10px] py-3 flex flex-col items-center">
           <div
             ref={trackRef}
+            role="slider"
+            aria-label="Volume"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round((muted ? 0 : vol) * 100)}
+            tabIndex={0}
             className="relative w-[6px] h-[80px] bg-white/10 rounded-full cursor-pointer"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}

@@ -27,6 +27,9 @@ const Floor5Rooftop = dynamic(
 export default function Home() {
   return (
     <main>
+      <a href="#content" className="skip-to-content">
+        Skip to content
+      </a>
       <Header />
       <MuteButton />
       <ElevatorDoors />

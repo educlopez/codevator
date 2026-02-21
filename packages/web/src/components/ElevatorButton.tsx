@@ -3,6 +3,7 @@ interface ElevatorButtonProps {
   active: boolean;
   onClick: () => void;
   color?: string;
+  ariaLabel?: string;
 }
 
 export function ElevatorButton({
@@ -10,10 +11,13 @@ export function ElevatorButton({
   active,
   onClick,
   color,
+  ariaLabel,
 }: ElevatorButtonProps) {
   return (
     <button
       onClick={onClick}
+      aria-label={ariaLabel}
+      aria-pressed={active}
       className={`group relative w-16 h-16 rounded-full border-2 transition-all duration-300 flex items-center justify-center text-xs font-semibold uppercase tracking-wider cursor-pointer
         ${
           active

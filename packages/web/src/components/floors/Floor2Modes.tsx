@@ -81,6 +81,7 @@ export function Floor2Modes() {
                 active={activeMode === mode.id}
                 onClick={() => handleModeClick(mode.id)}
                 color={mode.color}
+                ariaLabel={`Play ${mode.id} mode`}
               />
               <span className="text-xs text-olive-500">
                 {mode.id}
