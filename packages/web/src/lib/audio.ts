@@ -1,6 +1,6 @@
 type Mode = "elevator" | "typewriter" | "ambient" | "retro" | "minimal";
 
-const MP3_MODES: Mode[] = ["elevator", "typewriter", "ambient"];
+const MP3_MODES: Mode[] = ["elevator", "typewriter", "ambient", "retro", "minimal"];
 
 let audioCtx: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
@@ -118,131 +118,12 @@ function playMp3(mode: Mode) {
   audioEl.play().catch(() => {});
 }
 
-// -- Vinyl crackle layer (shared lo-fi texture) --
-function addVinylCrackle(ctx: AudioContext, destination: AudioNode, volume = 0.02) {
-  const bufferSize = 2 * ctx.sampleRate;
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() < 0.002 ? (Math.random() - 0.5) * 2 : 0;
-  }
-
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.value = 1200;
-  filter.Q.value = 0.5;
-
-  const gain = ctx.createGain();
-  gain.gain.value = volume;
-
-  source.connect(filter);
-  filter.connect(gain);
-  gain.connect(destination);
-  source.start();
-
-  activeNodes.push(source, filter, gain);
-}
-
-// -- Retro: mellow 8-bit arpeggio, lo-fi filtered --
-function playRetro() {
-  const ctx = getCtx();
-  const dest = getAnalyserNode();
-
-  const lpf = ctx.createBiquadFilter();
-  lpf.type = "lowpass";
-  lpf.frequency.value = 2000;
-  lpf.Q.value = 0.5;
-
-  const master = ctx.createGain();
-  master.gain.value = 0.1;
-
-  lpf.connect(master);
-  master.connect(dest);
-  activeNodes.push(lpf, master);
-
-  addVinylCrackle(ctx, master, 0.02);
-
-  const notes = [523, 659, 784, 1047, 784, 659];
-  let noteIndex = 0;
-
-  function playNote() {
-    if (currentMode !== "retro") return;
-
-    const osc = ctx.createOscillator();
-    osc.type = "square";
-    osc.frequency.value = notes[noteIndex % notes.length];
-
-    const noteGain = ctx.createGain();
-    noteGain.gain.setValueAtTime(0.2, ctx.currentTime);
-    noteGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
-
-    osc.connect(noteGain);
-    noteGain.connect(lpf);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.13);
-
-    noteIndex++;
-    activeTimers.push(setTimeout(playNote, 200));
-  }
-
-  playNote();
-}
-
-// -- Minimal: deep warm hum with slow breathing --
-function playMinimal() {
-  const ctx = getCtx();
-  const dest = getAnalyserNode();
-
-  const osc = ctx.createOscillator();
-  osc.type = "sine";
-  osc.frequency.value = 55;
-
-  const tremolo = ctx.createGain();
-  tremolo.gain.value = 0.5;
-  const lfo = ctx.createOscillator();
-  lfo.type = "sine";
-  lfo.frequency.value = 0.12;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = 0.3;
-  lfo.connect(lfoGain);
-  lfoGain.connect(tremolo.gain);
-
-  const lpf = ctx.createBiquadFilter();
-  lpf.type = "lowpass";
-  lpf.frequency.value = 200;
-
-  const master = ctx.createGain();
-  master.gain.value = 0.1;
-
-  osc.connect(tremolo);
-  tremolo.connect(lpf);
-  lpf.connect(master);
-  master.connect(dest);
-  osc.start();
-  lfo.start();
-
-  addVinylCrackle(ctx, master, 0.01);
-  activeNodes.push(osc, lfo, lfoGain, tremolo, lpf, master);
-}
-
 export function playMode(mode: Mode) {
   if (currentMode === mode) return;
   stopAll();
   currentMode = mode;
 
-  if (MP3_MODES.includes(mode)) {
-    playMp3(mode);
-  } else {
-    switch (mode) {
-      case "retro": playRetro(); break;
-      case "minimal": playMinimal(); break;
-    }
-  }
+  playMp3(mode);
 
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("codevator:mode", { detail: mode }));

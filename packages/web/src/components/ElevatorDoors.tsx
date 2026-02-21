@@ -129,9 +129,9 @@ export function ElevatorDoors() {
       {/* Interior — revealed after doors open */}
       <div className="absolute inset-0 overflow-hidden bg-olive-100">
         <section ref={interiorRef} className={`${skipped ? "" : "opacity-0 translate-y-5"} h-full flex flex-col justify-center`}>
-          <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10 flex flex-col items-center gap-12">
+          <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10 flex flex-col items-center gap-8 sm:gap-12">
             {/* Text content */}
-            <div className="flex flex-col items-center gap-5">
+            <div className="flex flex-col items-center gap-4 sm:gap-5 pt-16 sm:pt-0">
               {/* Badge */}
               <a
                 href="https://github.com/educlopez/codevator"
@@ -139,7 +139,7 @@ export function ElevatorDoors() {
                 rel="noopener noreferrer"
                 className="group inline-flex max-w-full gap-x-3 overflow-hidden rounded-full bg-olive-950/5 px-3 py-0.5 text-sm/6 text-olive-950 hover:bg-olive-950/10 transition-colors sm:items-center"
               >
-                <span className="truncate">Open-source CLI for Claude Code</span>
+                <span className="truncate">Sounds for Claude Code</span>
                 <span className="h-3 w-px bg-olive-950/20 max-sm:hidden" />
                 <span className="inline-flex shrink-0 items-center gap-1 font-semibold">
                   Star on GitHub

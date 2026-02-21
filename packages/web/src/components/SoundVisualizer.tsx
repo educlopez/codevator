@@ -6,6 +6,16 @@ import { getAnalyser, isAudioPlaying } from "@/lib/audio";
 const BAR_COUNT = 40;
 const USABLE_BINS = 20;
 
+const MODE_COLORS: Record<string, string> = {
+  elevator: "#1a6b4a",
+  typewriter: "#8B7355",
+  ambient: "#4a7ab5",
+  retro: "#a855f7",
+  minimal: "#999999",
+};
+
+const DEFAULT_COLOR = "#1a6b4a";
+
 /** Deterministic pseudo-random idle heights/speeds per bar */
 const idleBars = Array.from({ length: BAR_COUNT }, (_, i) => ({
   duration: 0.8 + (((i * 7 + 3) % 11) / 11) * 0.8,
@@ -19,6 +29,16 @@ export function SoundVisualizer() {
   const animRef = useRef<number>(0);
   const smoothedRef = useRef<Float32Array>(new Float32Array(BAR_COUNT));
   const [live, setLive] = useState(false);
+  const [color, setColor] = useState(DEFAULT_COLOR);
+
+  useEffect(() => {
+    function onMode(e: Event) {
+      const mode = (e as CustomEvent).detail;
+      setColor(mode ? MODE_COLORS[mode] || DEFAULT_COLOR : DEFAULT_COLOR);
+    }
+    window.addEventListener("codevator:mode", onMode);
+    return () => window.removeEventListener("codevator:mode", onMode);
+  }, []);
 
   useEffect(() => {
     let freqData: Uint8Array<ArrayBuffer> | null = null;
@@ -81,10 +101,10 @@ export function SoundVisualizer() {
             className={`flex-1 rounded-t-sm origin-bottom ${!live ? "animate-eq-idle" : ""}`}
             style={
               live
-                ? { height: "100%", transform: "scaleY(0.04)", willChange: "transform", backgroundColor: "#1a6b4a" }
+                ? { height: "100%", transform: "scaleY(0.04)", willChange: "transform", backgroundColor: color }
                 : {
                     height: `${bar.maxHeight}%`,
-                    backgroundColor: "#1a6b4a",
+                    backgroundColor: color,
                     animationName: "equalizer",
                     animationDuration: `${bar.duration}s`,
                     animationDelay: `${bar.delay}s`,
