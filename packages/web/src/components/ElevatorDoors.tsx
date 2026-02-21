@@ -23,19 +23,28 @@ export function ElevatorDoors() {
   const frameRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const [opened, setOpened] = useState(false);
+  const [skipped, setSkipped] = useState(false);
   const closingRef = useRef(false);
   const scrolledAwayRef = useRef(false);
+
+  // Skip animation for returning visitors this session
+  useEffect(() => {
+    if (sessionStorage.getItem("codevator:seen")) {
+      setSkipped(true);
+      setOpened(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (opened) {
       document.body.style.overflow = "auto";
       dispatchElevatorEvent("opened");
-    } else {
+    } else if (!skipped) {
       document.body.style.overflow = "hidden";
       window.scrollTo(0, 0);
       dispatchElevatorEvent("closed");
     }
-  }, [opened]);
+  }, [opened, skipped]);
 
   const closeElevator = useCallback(() => {
     if (!opened || closingRef.current) return;
@@ -85,6 +94,7 @@ export function ElevatorDoors() {
     if (opened || closingRef.current) return;
     unlockAudio();
     playMode("elevator");
+    sessionStorage.setItem("codevator:seen", "1");
 
     const tl = gsap.timeline({
       onComplete: () => setOpened(true),
@@ -100,10 +110,10 @@ export function ElevatorDoors() {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-screen overflow-hidden bg-olive-950">
+    <div ref={containerRef} className={`relative w-full h-screen overflow-hidden ${skipped ? "bg-olive-100" : "bg-olive-950"}`}>
       {/* Interior — revealed after doors open */}
       <div className="absolute inset-0 overflow-hidden bg-olive-100">
-        <section ref={interiorRef} className="opacity-0 translate-y-5 h-full flex flex-col justify-center">
+        <section ref={interiorRef} className={`${skipped ? "" : "opacity-0 translate-y-5"} h-full flex flex-col justify-center`}>
           <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10 flex flex-col items-center gap-12">
             {/* Text content */}
             <div className="flex flex-col items-center gap-5">
@@ -145,7 +155,7 @@ export function ElevatorDoors() {
       {/* Left door */}
       <div
         ref={leftDoorRef}
-        className="absolute top-0 left-0 w-1/2 h-full z-10"
+        className={`absolute top-0 left-0 w-1/2 h-full z-10 ${skipped ? "hidden" : ""}`}
         style={{ background: "linear-gradient(to bottom, #6b7260, #565c4c, #4a5040)" }}
       >
         {/* Noise texture overlay */}
@@ -164,7 +174,7 @@ export function ElevatorDoors() {
       {/* Right door */}
       <div
         ref={rightDoorRef}
-        className="absolute top-0 right-0 w-1/2 h-full z-10"
+        className={`absolute top-0 right-0 w-1/2 h-full z-10 ${skipped ? "hidden" : ""}`}
         style={{ background: "linear-gradient(to bottom, #6b7260, #565c4c, #4a5040)" }}
       >
         {/* Noise texture overlay */}
@@ -181,7 +191,7 @@ export function ElevatorDoors() {
       </div>
 
       {/* Door frame */}
-      <div ref={frameRef} className="absolute inset-0 z-20 pointer-events-none">
+      <div ref={frameRef} className={`absolute inset-0 z-20 pointer-events-none ${skipped ? "hidden" : ""}`}>
         {/* Top frame */}
         <div className="absolute top-0 left-0 right-0 h-8 bg-olive-950 shadow-[0_3px_12px_rgba(20,22,16,0.7)]" />
         {/* Bottom frame */}
@@ -198,7 +208,7 @@ export function ElevatorDoors() {
       </div>
 
       {/* Floor indicator — small display above doors */}
-      <div ref={indicatorRef} className="absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
+      <div ref={indicatorRef} className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none ${skipped ? "hidden" : ""}`}>
         <div className="flex items-center justify-center w-10 h-5 rounded-sm bg-olive-900/80 border border-white/[0.06] shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]">
           {/* Up arrow triangle */}
           <svg width="10" height="8" viewBox="0 0 10 8" className="text-olive-400/70">
@@ -210,7 +220,7 @@ export function ElevatorDoors() {
       {/* Call button overlay */}
       <div
         ref={overlayRef}
-        className="absolute inset-0 z-30 flex items-center justify-center"
+        className={`absolute inset-0 z-30 flex items-center justify-center ${skipped ? "hidden" : ""}`}
       >
         <button
           onClick={handleCallElevator}
