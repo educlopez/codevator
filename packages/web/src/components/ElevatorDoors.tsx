@@ -70,7 +70,7 @@ export function ElevatorDoors() {
   }, [opened]);
 
   useEffect(() => {
-    if (!opened) return;
+    if (!opened || skipped) return;
 
     function handleScroll() {
       const container = containerRef.current;
@@ -88,7 +88,22 @@ export function ElevatorDoors() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [opened, closeElevator]);
+  }, [opened, skipped, closeElevator]);
+
+  function handleReplayElevator() {
+    window.scrollTo({ top: 0 });
+
+    // Reset all elements to closed-door state
+    gsap.set(leftDoorRef.current, { xPercent: 0 });
+    gsap.set(rightDoorRef.current, { xPercent: 0 });
+    gsap.set(interiorRef.current, { opacity: 0, y: 20 });
+    gsap.set(frameRef.current, { opacity: 1 });
+    gsap.set(indicatorRef.current, { opacity: 1 });
+    gsap.set(overlayRef.current, { opacity: 1, pointerEvents: "auto" });
+
+    setSkipped(false);
+    setOpened(false);
+  }
 
   function handleCallElevator() {
     if (opened || closingRef.current) return;
@@ -148,6 +163,15 @@ export function ElevatorDoors() {
             <div className="w-full max-w-2xl mt-12">
               <SoundVisualizer />
             </div>
+
+            {skipped && (
+              <button
+                onClick={handleReplayElevator}
+                className="text-xs text-olive-400 hover:text-olive-600 transition-colors cursor-pointer tracking-wider uppercase"
+              >
+                Replay elevator
+              </button>
+            )}
           </div>
         </section>
       </div>
@@ -231,28 +255,28 @@ export function ElevatorDoors() {
           </span>
         </button>
 
-        {/* Post-it note — right */}
-        <div className="absolute right-6 sm:right-16 top-[28%] rotate-2 w-56 sm:w-64 p-5 sm:p-6 bg-amber-100 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40">
-          <p className="font-handwriting text-xl sm:text-2xl leading-relaxed text-amber-950/80">
+        {/* Post-it note — top */}
+        <div className="absolute left-6 right-6 top-[8%] sm:top-[28%] sm:left-auto sm:right-16 rotate-2 w-auto sm:w-64 p-4 sm:p-6 bg-amber-100 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40">
+          <p className="font-handwriting text-lg sm:text-2xl leading-relaxed text-amber-950/80">
             Welcome to Codevator.
             <br />
             <br />
             Please try to enjoy each floor equally.
           </p>
-          <p className="font-handwriting text-base text-amber-800/50 mt-3 text-right">
+          <p className="font-handwriting text-sm sm:text-base text-amber-800/50 mt-3 text-right">
             — Mgmt.
           </p>
         </div>
 
-        {/* Post-it note — left */}
-        <div className="absolute left-6 sm:left-16 top-[38%] -rotate-3 w-56 sm:w-64 p-5 sm:p-6 bg-yellow-50 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40">
-          <p className="font-handwriting text-xl sm:text-2xl leading-relaxed text-amber-950/80">
+        {/* Post-it note — bottom */}
+        <div className="absolute left-6 right-6 bottom-[8%] sm:bottom-auto sm:top-[38%] sm:left-16 sm:right-auto -rotate-3 w-auto sm:w-64 p-4 sm:p-6 bg-yellow-50 shadow-[3px_4px_12px_rgba(0,0,0,0.35)] z-40">
+          <p className="font-handwriting text-lg sm:text-2xl leading-relaxed text-amber-950/80">
             &ldquo;You miss 100% of the elevator music you don&rsquo;t play.&rdquo;
           </p>
-          <p className="font-handwriting text-base text-amber-950/50 mt-2 text-right">
+          <p className="font-handwriting text-sm sm:text-base text-amber-950/50 mt-2 text-right">
             — Wayne Gretzky
           </p>
-          <p className="font-handwriting text-base text-amber-950/40 text-right">
+          <p className="font-handwriting text-sm sm:text-base text-amber-950/40 text-right">
             &nbsp;&nbsp;&nbsp;— Michael Scott
           </p>
         </div>
