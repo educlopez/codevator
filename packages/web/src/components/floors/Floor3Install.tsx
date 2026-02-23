@@ -126,10 +126,10 @@ export function Floor3Install() {
             visible={visible}
             cardDelay={0}
             lines={[
-              <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator setup</span></p>,
-              <p key="b"><Accent color={blue}>&#x2713;</Accent> <span className="text-white/70">Hooks configured</span></p>,
-              <p key="c"><Accent color={blue}>&#x2713;</Accent> <span className="text-white/70">Sound modes downloaded</span></p>,
-              <p key="d"><Accent color={blue}>&#x2713;</Accent> <span className="text-white/70">Codevator is ready</span></p>,
+              <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator</span></p>,
+              <p key="b"><span className="text-white/70">🛗 Codevator installed!</span></p>,
+              <p key="c"><span className="text-white/50">   Hooks configured in ~/.claude/settings.json</span></p>,
+              <p key="d"><span className="text-white/50">   Default mode: elevator</span></p>,
             ]}
           />
 
@@ -159,9 +159,9 @@ export function Floor3Install() {
             cardDelay={600}
             lines={[
               <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">codevator mode retro</span></p>,
-              <p key="b"><Accent color={brown}>&#x2713;</Accent> <span className="text-white/70">Switched to retro</span></p>,
+              <p key="b"><span className="text-white/70">🛗 Mode set to: retro</span></p>,
               <p key="c" className="mt-1"><span className="text-white/60">$</span> <span className="text-white/90">codevator volume 50</span></p>,
-              <p key="d"><Accent color={brown}>&#x2713;</Accent> <span className="text-white/70">Volume set to 50%</span></p>,
+              <p key="d"><span className="text-white/70">🛗 Volume set to: 50%</span></p>,
             ]}
           />
         </div>
