@@ -105,7 +105,7 @@ export function Floor3Install() {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10">
+    <div id="get-started" className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10 scroll-mt-20">
       <div className="flex flex-col gap-10 sm:gap-16">
         <div className="flex flex-col items-center gap-6 text-center">
           <p className="text-sm/7 font-semibold text-olive-700">

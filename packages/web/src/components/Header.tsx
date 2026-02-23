@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from "react";
 
+const NAV_LINKS = [
+  { label: "GitHub", href: "https://github.com/educlopez/codevator" },
+  { label: "npm", href: "https://www.npmjs.com/package/codevator" },
+  { label: "Follow me", href: "https://x.com/educalvolpz" },
+];
+
 export function Header() {
   const [visible, setVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -25,46 +31,33 @@ export function Header() {
       }}
     >
       <nav className="bg-olive-100/80 backdrop-blur-md border-b border-olive-950/5">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-6 lg:px-10">
-          {/* Logo */}
-          <div className="flex flex-1 items-center gap-12">
+        <div className="mx-auto flex h-16 max-w-7xl items-center px-6 lg:px-10">
+          {/* Logo — left */}
+          <div className="flex-1">
             <a href="#" className="font-display text-2xl text-olive-950">
               Codevator.
             </a>
-            <div className="flex gap-8 max-lg:hidden">
-              <a
-                href="https://github.com/educlopez/codevator"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors"
-              >
-                GitHub
-              </a>
-              <a
-                href="https://www.npmjs.com/package/codevator"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors"
-              >
-                npm
-              </a>
-            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-1 items-center justify-end gap-4">
+          {/* Nav links — center */}
+          <div className="flex items-center gap-8 max-lg:hidden">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+
+          {/* Get started — right */}
+          <div className="flex flex-1 items-center justify-end">
             <a
-              href="https://github.com/educlopez/codevator"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors max-lg:hidden"
-            >
-              Docs
-            </a>
-            <a
-              href="https://www.npmjs.com/package/codevator"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#get-started"
               className="rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white hover:bg-olive-800 transition-colors max-sm:hidden"
             >
               Get started
@@ -97,28 +90,20 @@ export function Header() {
         {menuOpen && (
           <div className="lg:hidden border-t border-olive-950/5 bg-olive-100 px-6 pb-6 pt-4">
             <div className="flex flex-col gap-4">
+              {NAV_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-lg font-medium text-olive-950"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </a>
+              ))}
               <a
-                href="https://github.com/educlopez/codevator"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-lg font-medium text-olive-950"
-                onClick={() => setMenuOpen(false)}
-              >
-                GitHub
-              </a>
-              <a
-                href="https://www.npmjs.com/package/codevator"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-lg font-medium text-olive-950"
-                onClick={() => setMenuOpen(false)}
-              >
-                npm
-              </a>
-              <a
-                href="https://www.npmjs.com/package/codevator"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#get-started"
                 className="rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white text-center hover:bg-olive-800 transition-colors sm:hidden"
                 onClick={() => setMenuOpen(false)}
               >
