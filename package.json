@@ -7,7 +7,8 @@
     "build": "pnpm -r build",
     "build:web": "pnpm --filter web build",
     "build:cli": "pnpm --filter codevator build",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "release": "pnpm --filter codevator release"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver"]
