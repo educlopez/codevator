@@ -8,8 +8,7 @@
     "skipChecks": true
   },
   "npm": {
-    "publish": true,
-    "publishArgs": ["--auth-type=web"]
+    "publish": false
   },
   "hooks": {
     "before:init": ["npm test", "npm run build"]
