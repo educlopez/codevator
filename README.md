@@ -1,12 +1,19 @@
+<div align="center">
+
 # codevator
 
-![Codevator](packages/web/public/og-image.jpg)
+[![npm version](https://img.shields.io/npm/v/codevator.svg)](https://www.npmjs.com/package/codevator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-olive.svg)](LICENSE)
 
 Elevator music for your AI coding agent.
 
 Background sounds that play while [Claude Code](https://docs.anthropic.com/en/docs/claude-code) works and stop when it needs your attention.
 
-**Website: [codevator.dev](https://codevator.dev)**
+[Website](https://codevator.dev) · [npm](https://www.npmjs.com/package/codevator) · [Issues](https://github.com/educlopez/codevator/issues)
+
+![Codevator](.github/screenshot.png)
+
+</div>
 
 ## Quick Start
 
@@ -69,6 +76,10 @@ pnpm dev:cli    # CLI watch mode
 pnpm build      # Build all packages
 ```
 
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
 ## License
 
-MIT
+[MIT](LICENSE)

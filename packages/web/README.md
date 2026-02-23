@@ -1,6 +1,6 @@
 # codevator web
 
-![Codevator](public/og-image.jpg)
+![Codevator](../../.github/screenshot.png)
 
 Promotional website for [codevator](https://www.npmjs.com/package/codevator) — elevator music for your AI coding agent.
 
