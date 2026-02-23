@@ -1,6 +1,7 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { play, stop, isPlaying } from "./player.js";
 import { setupHooks, removeHooks } from "./setup.js";
+import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
 const VALID_COMMANDS = [
   "setup", "mode", "on", "off", "volume", "status",
@@ -46,61 +47,81 @@ export async function run(command: Command, args: string[]): Promise<void> {
 }
 
 function runSetup(): void {
+  intro();
+  const s = p.spinner();
+  s.start("Configuring hooks");
   setupHooks();
-  console.log("🛗 Codevator installed!");
-  console.log("   Hooks configured in ~/.claude/settings.json");
-  console.log("   Default mode: elevator");
-  console.log("   Run 'codevator mode <name>' to change sounds");
+  s.stop("Hooks configured in ~/.claude/settings.json");
+  outro("Installed! Default mode: elevator");
 }
 
-function runMode(mode: string | undefined): void {
+async function runMode(mode: string | undefined): Promise<void> {
   if (!mode || !MODES.includes(mode as CodevatorConfig["mode"])) {
-    console.log(`Available modes: ${MODES.join(", ")}`);
-    return;
+    intro();
+    const selected = await p.select({
+      message: "Select a sound mode",
+      options: MODES.map((m) => ({
+        value: m,
+        label: m,
+        hint: m === "elevator" ? "default" : undefined,
+      })),
+    });
+
+    if (p.isCancel(selected)) {
+      p.cancel("Cancelled.");
+      return;
+    }
+
+    mode = selected;
   }
+
   setConfig({ mode: mode as CodevatorConfig["mode"] });
-  // Restart playback if currently playing
   if (isPlaying()) {
     stop();
     play();
   }
-  console.log(`🛗 Mode set to: ${mode}`);
+  outro(`Mode set to: ${pc.cyan(mode)}`);
 }
 
 function runOn(): void {
   setConfig({ enabled: true });
-  console.log("🛗 Sounds enabled");
+  success("Sounds enabled");
 }
 
 function runOff(): void {
   stop();
   setConfig({ enabled: false });
-  console.log("🛗 Sounds disabled");
+  success("Sounds disabled");
 }
 
 function runVolume(level: string | undefined): void {
   const vol = parseInt(level ?? "", 10);
   if (isNaN(vol) || vol < 0 || vol > 100) {
-    console.log("Usage: codevator volume <0-100>");
+    warn("Usage: codevator volume <0-100>");
     return;
   }
   setConfig({ volume: vol });
-  // Restart playback with new volume if currently playing
   if (isPlaying()) {
     stop();
     play();
   }
-  console.log(`🛗 Volume set to: ${vol}%`);
+  success(`Volume set to ${vol}%  ${volumeBar(vol)}`);
 }
 
 function runStatus(): void {
   const config = getConfig();
   const playing = isPlaying();
-  console.log("🛗 Codevator Status");
-  console.log(`   Mode:    ${config.mode}`);
-  console.log(`   Volume:  ${config.volume}%`);
-  console.log(`   Enabled: ${config.enabled ? "yes" : "no"}`);
-  console.log(`   Playing: ${playing ? "yes" : "no"}`);
+  intro();
+  p.note(
+    [
+      `Mode     ${pc.cyan(config.mode)}`,
+      `Volume   ${volumeBar(config.volume)} ${config.volume}%`,
+      `Enabled  ${config.enabled ? pc.green("yes") : pc.red("no")}`,
+      `Playing  ${playing ? pc.green("yes") : pc.dim("no")}`,
+    ].join("\n"),
+    "Status"
+  );
+  p.outro("");
 }
 
 function runPlay(): void {
@@ -112,26 +133,30 @@ function runStop(): void {
 }
 
 function runUninstall(): void {
+  intro();
+  const s = p.spinner();
+  s.start("Removing hooks");
   stop();
   removeHooks();
-  console.log("🛗 Codevator uninstalled");
-  console.log("   Hooks removed from ~/.claude/settings.json");
-  console.log("   Config remains at ~/.codevator/ (delete manually if desired)");
+  s.stop("Hooks removed from ~/.claude/settings.json");
+  outro("Uninstalled. Config remains at ~/.codevator/");
 }
 
 function runHelp(): void {
-  console.log(`🛗 Codevator — Elevator music for your AI coding agent
-
-Usage: npx codevator <command>
-
-Commands:
-  setup              Install hooks into Claude Code (default)
-  mode <name>        Set sound mode (elevator|typewriter|ambient|retro|minimal)
-  on                 Enable sounds
-  off                Disable sounds
-  volume <0-100>     Set volume level
-  status             Show current settings
-  uninstall          Remove hooks from Claude Code
-
-Quick start: npx codevator`);
+  intro();
+  p.note(
+    [
+      `Usage: ${pc.cyan("npx codevator")} <command>`,
+      "",
+      "Commands:",
+      `  ${pc.cyan("setup")}            Install hooks into Claude Code`,
+      `  ${pc.cyan("mode")} <name>      Set sound mode`,
+      `  ${pc.cyan("on")} / ${pc.cyan("off")}         Enable or disable sounds`,
+      `  ${pc.cyan("volume")} <0-100>   Set volume level`,
+      `  ${pc.cyan("status")}           Show current settings`,
+      `  ${pc.cyan("uninstall")}        Remove hooks`,
+    ].join("\n"),
+    "Elevator music for your AI coding agent"
+  );
+  outro(`Quick start: ${pc.cyan("npx codevator")}`);
 }
