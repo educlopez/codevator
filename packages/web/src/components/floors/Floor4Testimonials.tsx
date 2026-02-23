@@ -8,20 +8,20 @@ const TESTIMONIALS = [
   {
     quote:
       "The retro mode makes refactoring feel like a game. Productivity is its own reward.",
-    name: "I. Burt",
+    name: "B. Goodman",
     title: "Optics & Design",
   },
   {
     quote:
-      "My agent codes. I listen. We are both at peace.",
-    name: "H. Selvig",
-    title: "Wellness & Recreation",
+      "I'm not superstitious, but I am a little stitious about coding in silence.",
+    name: "M. Scott",
+    title: "Regional Manager",
   },
   {
     quote:
-      "Codevator has been integrated into all departments. Compliance is voluntary and total.",
-    name: "S. Cobel",
-    title: "Codevator Industries",
+      "I have been playing elevator mode for three hours. I do not plan to stop. That is all.",
+    name: "D. Schrute",
+    title: "Assistant to the Regional Manager",
   },
 ];
 
