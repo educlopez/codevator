@@ -127,9 +127,9 @@ export function Floor3Install() {
             cardDelay={0}
             lines={[
               <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator</span></p>,
-              <p key="b"><span className="text-white/70">🛗 Codevator installed!</span></p>,
-              <p key="c"><span className="text-white/50">   Hooks configured in ~/.claude/settings.json</span></p>,
-              <p key="d"><span className="text-white/50">   Default mode: elevator</span></p>,
+              <p key="b"><Accent color={blue}>┌</Accent> <span className="text-white/70 bg-cyan-600/30 px-1 rounded-sm">codevator</span></p>,
+              <p key="c"><Accent color={blue}>◇</Accent> <span className="text-white/70">Hooks configured in ~/.claude/settings.json</span></p>,
+              <p key="d"><Accent color={blue}>└</Accent> <span className="text-white/50">Installed! Default mode: elevator</span></p>,
             ]}
           />
 
@@ -158,10 +158,10 @@ export function Floor3Install() {
             visible={visible}
             cardDelay={600}
             lines={[
-              <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">codevator mode retro</span></p>,
-              <p key="b"><span className="text-white/70">🛗 Mode set to: retro</span></p>,
-              <p key="c" className="mt-1"><span className="text-white/60">$</span> <span className="text-white/90">codevator volume 50</span></p>,
-              <p key="d"><span className="text-white/70">🛗 Volume set to: 50%</span></p>,
+              <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator mode retro</span></p>,
+              <p key="b"><Accent color={brown}>└</Accent> <span className="text-white/70">Mode set to: <Accent color={brown}>retro</Accent></span></p>,
+              <p key="c" className="mt-1"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator volume 50</span></p>,
+              <p key="d"><Accent color={brown}>◆</Accent> <span className="text-white/70">Volume set to 50% █████░░░░░</span></p>,
             ]}
           />
         </div>

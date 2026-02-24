@@ -52,6 +52,15 @@ function runSetup(): void {
   s.start("Configuring hooks");
   setupHooks();
   s.stop("Hooks configured in ~/.claude/settings.json");
+  p.log.step(
+    [
+      `${pc.cyan("npx codevator mode")} <name>  Set sound mode`,
+      `${pc.cyan("npx codevator on")} / ${pc.cyan("off")}     Enable or disable sounds`,
+      `${pc.cyan("npx codevator volume")} <n>   Set volume (0-100)`,
+      `${pc.cyan("npx codevator status")}       Show current settings`,
+      `${pc.cyan("npx codevator uninstall")}    Remove hooks`,
+    ].join("\n")
+  );
   outro("Installed! Default mode: elevator");
 }
 
@@ -97,7 +106,7 @@ function runOff(): void {
 function runVolume(level: string | undefined): void {
   const vol = parseInt(level ?? "", 10);
   if (isNaN(vol) || vol < 0 || vol > 100) {
-    warn("Usage: codevator volume <0-100>");
+    warn("Usage: npx codevator volume <0-100>");
     return;
   }
   setConfig({ volume: vol });
@@ -149,12 +158,12 @@ function runHelp(): void {
       `Usage: ${pc.cyan("npx codevator")} <command>`,
       "",
       "Commands:",
-      `  ${pc.cyan("setup")}            Install hooks into Claude Code`,
-      `  ${pc.cyan("mode")} <name>      Set sound mode`,
-      `  ${pc.cyan("on")} / ${pc.cyan("off")}         Enable or disable sounds`,
-      `  ${pc.cyan("volume")} <0-100>   Set volume level`,
-      `  ${pc.cyan("status")}           Show current settings`,
-      `  ${pc.cyan("uninstall")}        Remove hooks`,
+      `  ${pc.cyan("npx codevator")}              Install hooks (default)`,
+      `  ${pc.cyan("npx codevator mode")} <name>  Set sound mode`,
+      `  ${pc.cyan("npx codevator on")} / ${pc.cyan("off")}     Enable or disable sounds`,
+      `  ${pc.cyan("npx codevator volume")} <n>   Set volume (0-100)`,
+      `  ${pc.cyan("npx codevator status")}       Show current settings`,
+      `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
     ].join("\n"),
     "Elevator music for your AI coding agent"
   );
