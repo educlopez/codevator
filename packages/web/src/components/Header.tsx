@@ -3,23 +3,25 @@
 import { useState, useEffect } from "react";
 
 const NAV_LINKS = [
-  { label: "GitHub", href: "https://github.com/educlopez/codevator" },
-  { label: "npm", href: "https://www.npmjs.com/package/codevator" },
-  { label: "Follow me", href: "https://x.com/educalvolpz" },
+  { label: "Roadmap", href: "/roadmap", external: false },
+  { label: "GitHub", href: "https://github.com/educlopez/codevator", external: true },
+  { label: "npm", href: "https://www.npmjs.com/package/codevator", external: true },
+  { label: "Follow me", href: "https://x.com/educalvolpz", external: true },
 ];
 
-export function Header() {
-  const [visible, setVisible] = useState(false);
+export function Header({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
+  const [visible, setVisible] = useState(alwaysVisible);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (alwaysVisible) return;
     function onElevator(e: Event) {
       const detail = (e as CustomEvent).detail;
       setVisible(detail === "opened");
     }
     window.addEventListener("codevator:elevator", onElevator);
     return () => window.removeEventListener("codevator:elevator", onElevator);
-  }, []);
+  }, [alwaysVisible]);
 
   return (
     <header
@@ -45,8 +47,7 @@ export function Header() {
               <a
                 key={link.label}
                 href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
+                {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors"
               >
                 {link.label}
@@ -94,8 +95,7 @@ export function Header() {
                 <a
                   key={link.label}
                   href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   className="text-lg font-medium text-olive-950"
                   onClick={() => setMenuOpen(false)}
                 >
