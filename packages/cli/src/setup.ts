@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -30,18 +30,7 @@ function writeSettings(settings: Record<string, any>): void {
 }
 
 function codevatorCommand(sub: string, extra?: Record<string, boolean>): Record<string, any> {
-  const isGlobal = isGloballyInstalled();
-  const cmd = isGlobal ? `codevator ${sub}` : `npx -y codevator ${sub}`;
-  return { type: "command", command: cmd, ...extra };
-}
-
-function isGloballyInstalled(): boolean {
-  try {
-    execSync("command -v codevator", { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
+  return { type: "command", command: `npx -y codevator ${sub}`, ...extra };
 }
 
 function buildHooks() {
