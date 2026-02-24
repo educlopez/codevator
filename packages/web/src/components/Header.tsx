@@ -36,7 +36,7 @@ export function Header({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center px-6 lg:px-10">
           {/* Logo — left */}
           <div className="flex-1">
-            <a href="#" className="font-display text-2xl text-olive-950">
+            <a href="/" className="font-display text-2xl text-olive-950">
               Codevator.
             </a>
           </div>
