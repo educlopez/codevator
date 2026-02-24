@@ -21,6 +21,10 @@ function isMobileDevice(): boolean {
   return _mobile;
 }
 
+export function isMobile(): boolean {
+  return isMobileDevice();
+}
+
 /** Call on a user gesture (click/tap) to unlock AudioContext for the session. */
 export function unlockAudio() {
   if (!audioCtx) {
