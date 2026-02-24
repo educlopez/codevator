@@ -28,19 +28,18 @@ Five built-in modes:
 Switch modes:
 
 ```bash
-codevator mode ambient
+npx codevator mode ambient
 ```
 
 ## Commands
 
 ```
-codevator setup            Install hooks into Claude Code
-codevator mode <name>      Set sound mode
-codevator on               Enable sounds
-codevator off              Disable sounds
-codevator volume <0-100>   Set volume level
-codevator status           Show current settings
-codevator uninstall        Remove hooks from Claude Code
+npx codevator              Install hooks into Claude Code
+npx codevator mode <name>  Set sound mode
+npx codevator on / off     Enable or disable sounds
+npx codevator volume <n>   Set volume (0-100)
+npx codevator status       Show current settings
+npx codevator uninstall    Remove hooks from Claude Code
 ```
 
 ## How It Works

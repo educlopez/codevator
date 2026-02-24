@@ -36,18 +36,18 @@ Five built-in modes:
 | `minimal` | Deep warm hum with slow breathing |
 
 ```bash
-codevator mode ambient
+npx codevator mode ambient
 ```
 
 ## Commands
 
 ```
 npx codevator              Install hooks into Claude Code
-codevator mode <name>      Set sound mode
-codevator volume <0-100>   Set volume level
-codevator on / off         Enable or disable sounds
-codevator status           Show current settings
-codevator uninstall        Remove hooks from Claude Code
+npx codevator mode <name>  Set sound mode
+npx codevator volume <n>   Set volume (0-100)
+npx codevator on / off     Enable or disable sounds
+npx codevator status       Show current settings
+npx codevator uninstall    Remove hooks from Claude Code
 ```
 
 ## How It Works
