@@ -77,7 +77,7 @@ export function MuteButton() {
   return (
     <div
       ref={containerRef}
-      className="fixed bottom-6 right-6 z-50 hidden md:flex flex-col items-center"
+      className="fixed bottom-6 right-6 z-50 flex flex-col items-center"
       onMouseEnter={() => { cancelHide(); setShowSlider(true); }}
       onMouseLeave={scheduleHide}
     >

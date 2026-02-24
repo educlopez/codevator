@@ -146,7 +146,6 @@ export function getCurrentMode(): Mode | null {
 }
 
 export function toggleMute(): boolean {
-  if (isMobileDevice()) return true;
   muted = !muted;
   if (masterGain) {
     masterGain.gain.value = muted ? 0 : volume;
@@ -159,7 +158,6 @@ export function isMuted(): boolean {
 }
 
 export function setVolume(v: number) {
-  if (isMobileDevice()) return;
   volume = Math.max(0, Math.min(1, v));
   if (volume === 0) {
     muted = true;
