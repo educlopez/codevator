@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.4.0](https://github.com/educlopez/codevator/compare/v0.3.0...v0.4.0) (2026-02-24)
+
+
+### Bug Fixes
+
+* **cli:** disable GitHub release in release-it, create via gh CLI ([41d92f4](https://github.com/educlopez/codevator/commit/41d92f49021b89370e3963cbfcb75734cf967632))
+
+
+### Features
+
+* show available commands after setup, update help and web terminal examples ([367f3ad](https://github.com/educlopez/codevator/commit/367f3ad12e99db89ed6db7363efc3cc903e266cc))
+
 # [0.3.0](https://github.com/educlopez/codevator/compare/v0.2.2...v0.3.0) (2026-02-23)
 
 
