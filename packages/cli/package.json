@@ -8,7 +8,7 @@
   },
   "files": [
     "dist",
-    "sounds"
+    "sounds/typewriter.mp3"
   ],
   "scripts": {
     "build": "tsup",
