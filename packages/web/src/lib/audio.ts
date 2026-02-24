@@ -10,7 +10,6 @@ let mediaSource: MediaElementAudioSourceNode | null = null;
 let activeNodes: AudioNode[] = [];
 let activeTimers: ReturnType<typeof setTimeout>[] = [];
 let currentMode: Mode | null = null;
-let muted = false;
 let volume = 0.35;
 
 let _mobile: boolean | null = null;
@@ -21,9 +20,7 @@ function isMobileDevice(): boolean {
   return _mobile;
 }
 
-export function isMobile(): boolean {
-  return isMobileDevice();
-}
+let muted = isMobileDevice();
 
 /** Call on a user gesture (click/tap) to unlock AudioContext for the session. */
 export function unlockAudio() {
@@ -49,7 +46,6 @@ function getMasterGain(): GainNode {
   const ctx = getCtx();
   if (!masterGain) {
     masterGain = ctx.createGain();
-    if (isMobileDevice()) muted = true;
     masterGain.gain.value = muted ? 0 : volume;
     masterGain.connect(ctx.destination);
   }

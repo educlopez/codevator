@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { toggleMute, isMuted, isMobile, isAudioPlaying, setVolume, getVolume } from "@/lib/audio";
+import { toggleMute, isMuted, isAudioPlaying, setVolume, getVolume } from "@/lib/audio";
 
 export function MuteButton() {
-  const [muted, setMuted] = useState(() => isMuted() || isMobile());
+  const [muted, setMuted] = useState(() => isMuted());
   const [playing, setPlaying] = useState(false);
   const [vol, setVol] = useState(getVolume());
   const [showSlider, setShowSlider] = useState(false);
