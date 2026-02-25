@@ -69,8 +69,8 @@ export async function play(): Promise<void> {
       const { downloadSound } = await import("./registry.js");
       soundFile = await downloadSound(config.mode);
     } catch {
-      // Fallback to bundled typewriter
-      soundFile = getSoundFile("typewriter");
+      // Fallback to bundled elevator
+      soundFile = getSoundFile("elevator");
     }
   }
 
