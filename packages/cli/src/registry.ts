@@ -62,6 +62,11 @@ export async function downloadSound(name: string, manifest?: SoundManifest): Pro
   fs.mkdirSync(soundsDir, { recursive: true });
   const dest = path.join(soundsDir, `${name}.mp3`);
 
+  // Prevent path traversal
+  if (!dest.startsWith(soundsDir + path.sep)) {
+    throw new Error(`Invalid sound name: '${name}'`);
+  }
+
   // Skip if already downloaded
   if (fs.existsSync(dest)) return dest;
 

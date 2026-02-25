@@ -1,7 +1,7 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { isValidMode } from "./config.js";
-import { play, stop, isPlaying } from "./player.js";
-import { fetchManifest, downloadSound, isInstalled, type SoundEntry } from "./registry.js";
+import { play, stop, isPlaying, getSoundFile } from "./player.js";
+import { fetchManifest, downloadSound, isInstalled, listInstalled, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
@@ -58,7 +58,6 @@ async function runSetup(): Promise<void> {
   s.stop("Hooks configured in ~/.claude/settings.json");
 
   // Download default sound if not already available (bundled or local)
-  const { getSoundFile } = await import("./player.js");
   if (!getSoundFile("elevator")) {
     const dl = p.spinner();
     dl.start("Downloading default sound");
@@ -88,7 +87,7 @@ async function runMode(mode: string | undefined): Promise<void> {
     intro();
 
     // Build options from installed sounds + built-in modes
-    const installed = (await import("./registry.js")).listInstalled();
+    const installed = listInstalled();
     const allModes = [...new Set([...MODES, ...installed])];
 
     const selected = await p.select({

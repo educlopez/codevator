@@ -175,7 +175,7 @@ export function DocsContent() {
                 <p>
                   Or install a specific sound by name:
                 </p>
-                <CodeBlock copyText="npx codevator add lofi">npx codevator add lofi</CodeBlock>
+                <CodeBlock copyText="npx codevator add ambient">npx codevator add ambient</CodeBlock>
                 <p>
                   You can also use your own audio files. Place any <code className="font-mono text-olive-950">.mp3</code> file
                   in <code className="font-mono text-olive-950">~/.codevator/sounds/</code> and use its filename as the mode:

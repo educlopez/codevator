@@ -101,7 +101,7 @@ export function Header({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
             </div>
 
             <a
-              href="#get-started"
+              href="/#get-started"
               className="ml-3 rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white hover:bg-olive-800 transition-colors max-sm:hidden"
             >
               Get started
@@ -162,7 +162,7 @@ export function Header({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
               </div>
 
               <a
-                href="#get-started"
+                href="/#get-started"
                 className="rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white text-center hover:bg-olive-800 transition-colors sm:hidden"
                 onClick={() => setMenuOpen(false)}
               >
