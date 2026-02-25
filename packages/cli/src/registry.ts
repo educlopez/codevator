@@ -16,6 +16,7 @@ function isValidManifest(m: unknown): m is SoundManifest {
     typeof m === "object" &&
     m !== null &&
     typeof (m as SoundManifest).baseUrl === "string" &&
+    (m as SoundManifest).baseUrl.length > 0 &&
     Array.isArray((m as SoundManifest).sounds)
   );
 }
@@ -56,7 +57,9 @@ export async function fetchManifest(): Promise<SoundManifest> {
   } catch {
     // Fallback to cached version
     try {
-      return JSON.parse(fs.readFileSync(getManifestCache(), "utf-8"));
+      const cached: unknown = JSON.parse(fs.readFileSync(getManifestCache(), "utf-8"));
+      if (!isValidManifest(cached)) throw new Error("Invalid cached manifest");
+      return cached;
     } catch {
       throw new Error("Could not fetch sound registry and no local cache found");
     }
@@ -65,7 +68,8 @@ export async function fetchManifest(): Promise<SoundManifest> {
 
 export function getCachedManifest(): SoundManifest | null {
   try {
-    return JSON.parse(fs.readFileSync(getManifestCache(), "utf-8"));
+    const raw: unknown = JSON.parse(fs.readFileSync(getManifestCache(), "utf-8"));
+    return isValidManifest(raw) ? raw : null;
   } catch {
     return null;
   }
@@ -98,7 +102,10 @@ export async function downloadSound(name: string, manifest?: SoundManifest): Pro
 }
 
 export function isInstalled(name: string): boolean {
-  return fs.existsSync(path.join(getSoundsDir(), `${name}.mp3`));
+  const soundsDir = getSoundsDir();
+  const filePath = path.join(soundsDir, `${name}.mp3`);
+  if (!filePath.startsWith(soundsDir + path.sep)) return false;
+  return fs.existsSync(filePath);
 }
 
 export function listInstalled(): string[] {
