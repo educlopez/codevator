@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.6.0](https://github.com/educlopez/codevator/compare/v0.5.0...v0.6.0) (2026-02-25)
+
+
+### Bug Fixes
+
+* add fetch timeout and manifest validation in registry ([dcf70d8](https://github.com/educlopez/codevator/commit/dcf70d8bb9b4bec2291ce7cf1844a71d98e0adff))
+* address PR review feedback ([39c0cba](https://github.com/educlopez/codevator/commit/39c0cba4b31629300bf0f43c38c39ad95fa5e3da)), closes [#get-started](https://github.com/educlopez/codevator/issues/get-started) [#get-started](https://github.com/educlopez/codevator/issues/get-started)
+* bundle elevator.mp3 instead of typewriter as default fallback ([3014e43](https://github.com/educlopez/codevator/commit/3014e430258929099f24a1bddc3bad5c07a2932c))
+* harden registry validation and path traversal guards ([1e0c0f8](https://github.com/educlopez/codevator/commit/1e0c0f842057f37b0eb1c6d8a0dce5478c8f2a3f))
+* skip redundant download when elevator.mp3 is already bundled ([23d03f7](https://github.com/educlopez/codevator/commit/23d03f7c1256c0ed4c904e1d891a9bbffa560d2d))
+
+
+### Features
+
+* sound registry, custom sounds, and new web pages ([02cc01c](https://github.com/educlopez/codevator/commit/02cc01cf6fde481ef45a78fc38b9cf35f9fc06f0))
+
 # [0.5.0](https://github.com/educlopez/codevator/compare/v0.4.1...v0.5.0) (2026-02-24)
 
 
