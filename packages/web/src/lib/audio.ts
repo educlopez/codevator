@@ -1,7 +1,3 @@
-type Mode = "elevator" | "typewriter" | "ambient" | "retro" | "minimal";
-
-const MP3_MODES: Mode[] = ["elevator", "typewriter", "ambient", "retro", "minimal"];
-
 let audioCtx: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
 let masterGain: GainNode | null = null;
@@ -9,7 +5,7 @@ let audioEl: HTMLAudioElement | null = null;
 let mediaSource: MediaElementAudioSourceNode | null = null;
 let activeNodes: AudioNode[] = [];
 let activeTimers: ReturnType<typeof setTimeout>[] = [];
-let currentMode: Mode | null = null;
+let currentMode: string | null = null;
 let volume = 0.35;
 
 let _mobile: boolean | null = null;
@@ -95,8 +91,8 @@ function stopAll() {
   currentMode = null;
 }
 
-// -- MP3 playback for elevator, typewriter, ambient --
-function playMp3(mode: Mode) {
+// -- MP3 playback --
+function playMp3(mode: string) {
   const ctx = getCtx();
   const dest = getAnalyserNode();
 
@@ -118,7 +114,7 @@ function playMp3(mode: Mode) {
   audioEl.play().catch(() => {});
 }
 
-export function playMode(mode: Mode) {
+export function playMode(mode: string) {
   if (currentMode === mode) return;
   stopAll();
   currentMode = mode;
@@ -141,7 +137,7 @@ export function isAudioPlaying(): boolean {
   return currentMode !== null;
 }
 
-export function getCurrentMode(): Mode | null {
+export function getCurrentMode(): string | null {
   return currentMode;
 }
 

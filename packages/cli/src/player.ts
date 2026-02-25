@@ -31,10 +31,16 @@ function buildArgs(player: string, volume: number, filePath: string): string[] {
   return [filePath];
 }
 
-export function getSoundFile(mode: string): string {
-  // Sounds are bundled with the package
-  const soundsDir = path.join(__dirname, "..", "sounds");
-  return path.join(soundsDir, `${mode}.mp3`);
+export function getSoundFile(mode: string): string | null {
+  // 1. Check user's local sounds directory (downloaded + custom)
+  const localFile = path.join(getConfigDir(), "sounds", `${mode}.mp3`);
+  if (fs.existsSync(localFile)) return localFile;
+
+  // 2. Check bundled sounds (fallback - only elevator.mp3 in package)
+  const bundledFile = path.join(__dirname, "..", "sounds", `${mode}.mp3`);
+  if (fs.existsSync(bundledFile)) return bundledFile;
+
+  return null;
 }
 
 export function isPlaying(): boolean {
@@ -49,20 +55,28 @@ export function isPlaying(): boolean {
   }
 }
 
-export function play(): void {
+export async function play(): Promise<void> {
   if (isPlaying()) return; // Already playing, don't restart
 
   const config = getConfig();
   if (!config.enabled) return;
 
-  const player = detectPlayer();
-  const soundFile = getSoundFile(config.mode);
+  let soundFile = getSoundFile(config.mode);
 
-  if (!fs.existsSync(soundFile)) {
-    console.error(`Sound file not found: ${soundFile}`);
-    return;
+  // Lazy download: if sound not found locally, try downloading from registry
+  if (!soundFile) {
+    try {
+      const { downloadSound } = await import("./registry.js");
+      soundFile = await downloadSound(config.mode);
+    } catch {
+      // Fallback to bundled elevator
+      soundFile = getSoundFile("elevator");
+    }
   }
 
+  if (!soundFile) return; // Nothing works, silent
+
+  const player = detectPlayer();
   const args = buildArgs(player, config.volume, soundFile);
 
   // Spawn looping playback in background

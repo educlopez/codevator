@@ -5,41 +5,60 @@ import { ElevatorButton } from "../ElevatorButton";
 import { AudioVisualizer } from "../AudioVisualizer";
 import { playMode, stopAudio } from "@/lib/audio";
 
-const MODES = [
-  {
-    id: "elevator" as const,
-    label: "Elvtr",
-    description: "Lo-fi warmth. The default. Like being on hold with the future.",
-    color: "#1a6b4a",
-  },
-  {
-    id: "typewriter" as const,
-    label: "Type",
-    description: "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.",
-    color: "#8B7355",
-  },
-  {
-    id: "ambient" as const,
-    label: "Rain",
-    description: "Gentle rain and a low drone. The outside world, piped in.",
-    color: "#4a7ab5",
-  },
-  {
-    id: "retro" as const,
-    label: "8bit",
-    description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.",
-    color: "#a855f7",
-  },
-  {
-    id: "minimal" as const,
-    label: "Min",
-    description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.",
-    color: "#999999",
-  },
+interface SoundEntry {
+  name: string;
+  description: string;
+  category: string;
+  color: string;
+}
+
+interface ModeItem {
+  id: string;
+  label: string;
+  description: string;
+  color: string;
+}
+
+const LABEL_MAP: Record<string, string> = {
+  elevator: "Elvtr",
+  typewriter: "Type",
+  ambient: "Rain",
+  retro: "8bit",
+  minimal: "Min",
+};
+
+const FALLBACK_MODES: ModeItem[] = [
+  { id: "elevator", label: "Elvtr", description: "Lo-fi warmth. The default. Like being on hold with the future.", color: "#1a6b4a" },
+  { id: "typewriter", label: "Type", description: "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.", color: "#8B7355" },
+  { id: "ambient", label: "Rain", description: "Gentle rain and a low drone. The outside world, piped in.", color: "#4a7ab5" },
+  { id: "retro", label: "8bit", description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.", color: "#a855f7" },
+  { id: "minimal", label: "Min", description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.", color: "#999999" },
 ];
 
+function toModeItem(sound: SoundEntry): ModeItem {
+  return {
+    id: sound.name,
+    label: LABEL_MAP[sound.name] ?? sound.name.slice(0, 4),
+    description: sound.description,
+    color: sound.color,
+  };
+}
+
 export function Floor2Modes() {
+  const [modes, setModes] = useState<ModeItem[]>(FALLBACK_MODES);
   const [activeMode, setActiveMode] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/sounds.json")
+      .then((res) => res.json())
+      .then((data: { sounds: SoundEntry[] }) => {
+        const builtIn = data.sounds.filter((s) => s.category === "built-in");
+        if (builtIn.length > 0) {
+          setModes(builtIn.map(toModeItem));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     function handleModeChange(e: Event) {
@@ -55,11 +74,11 @@ export function Floor2Modes() {
       setActiveMode(null);
     } else {
       setActiveMode(modeId);
-      playMode(modeId as Parameters<typeof playMode>[0]);
+      playMode(modeId);
     }
   }
 
-  const active = MODES.find((m) => m.id === activeMode);
+  const active = modes.find((m) => m.id === activeMode);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10">
@@ -74,7 +93,7 @@ export function Floor2Modes() {
         </div>
 
         <div className="flex justify-center gap-6 flex-wrap">
-          {MODES.map((mode) => (
+          {modes.map((mode) => (
             <div key={mode.id} className="flex flex-col items-center gap-2">
               <ElevatorButton
                 label={mode.label}

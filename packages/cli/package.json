@@ -8,7 +8,7 @@
   },
   "files": [
     "dist",
-    "sounds"
+    "sounds/elevator.mp3"
   ],
   "scripts": {
     "build": "tsup",

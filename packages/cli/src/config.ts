@@ -3,7 +3,7 @@ import path from "node:path";
 import os from "node:os";
 
 export interface CodevatorConfig {
-  mode: "elevator" | "typewriter" | "ambient" | "retro" | "minimal";
+  mode: string;
   volume: number;
   enabled: boolean;
 }
@@ -46,4 +46,10 @@ export function setConfig(partial: Partial<CodevatorConfig>): void {
   const dir = getConfigDir();
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(getConfigPath(), JSON.stringify(merged, null, 2));
+}
+
+export function isValidMode(mode: string): boolean {
+  if ((MODES as readonly string[]).includes(mode)) return true;
+  const soundFile = path.join(getConfigDir(), "sounds", `${mode}.mp3`);
+  return fs.existsSync(soundFile);
 }

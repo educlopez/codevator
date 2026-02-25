@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "baseUrl": "https://codevator.dev/sounds",
+  "sounds": [
+    {
+      "name": "elevator",
+      "description": "Lo-fi warmth. The default. Like being on hold with the future.",
+      "category": "built-in",
+      "color": "#1a6b4a"
+    },
+    {
+      "name": "typewriter",
+      "description": "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.",
+      "category": "built-in",
+      "color": "#8B7355"
+    },
+    {
+      "name": "ambient",
+      "description": "Gentle rain and a low drone. The outside world, piped in.",
+      "category": "built-in",
+      "color": "#4a7ab5"
+    },
+    {
+      "name": "retro",
+      "description": "Chiptune arpeggios. Reward your agent with the Music Dance Experience.",
+      "category": "built-in",
+      "color": "#a855f7"
+    },
+    {
+      "name": "minimal",
+      "description": "A deep hum. Almost nothing. For those who prefer quiet contemplation.",
+      "category": "built-in",
+      "color": "#999999"
+    }
+  ]
+}
