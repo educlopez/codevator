@@ -36,7 +36,7 @@ export function getSoundFile(mode: string): string | null {
   const localFile = path.join(getConfigDir(), "sounds", `${mode}.mp3`);
   if (fs.existsSync(localFile)) return localFile;
 
-  // 2. Check bundled sounds (fallback - only typewriter.mp3 after slim)
+  // 2. Check bundled sounds (fallback - only elevator.mp3 in package)
   const bundledFile = path.join(__dirname, "..", "sounds", `${mode}.mp3`);
   if (fs.existsSync(bundledFile)) return bundledFile;
 

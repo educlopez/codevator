@@ -57,14 +57,17 @@ async function runSetup(): Promise<void> {
   setupHooks();
   s.stop("Hooks configured in ~/.claude/settings.json");
 
-  // Download default sound
-  const dl = p.spinner();
-  dl.start("Downloading default sound");
-  try {
-    await downloadSound("elevator");
-    dl.stop("Default sound ready");
-  } catch {
-    dl.stop("Could not download default sound (will retry on first play)");
+  // Download default sound if not already available (bundled or local)
+  const { getSoundFile } = await import("./player.js");
+  if (!getSoundFile("elevator")) {
+    const dl = p.spinner();
+    dl.start("Downloading default sound");
+    try {
+      await downloadSound("elevator");
+      dl.stop("Default sound ready");
+    } catch {
+      dl.stop("Could not download default sound (will retry on first play)");
+    }
   }
 
   p.log.step(
