@@ -10,6 +10,49 @@ export function getPidFile(): string {
   return path.join(getConfigDir(), "player.pid");
 }
 
+function getLockFile(): string {
+  return path.join(getConfigDir(), "player.lock");
+}
+
+/**
+ * Acquire an exclusive lock using O_EXCL (atomic create-or-fail).
+ * Returns true if lock acquired, false if another process holds it.
+ */
+function acquireLock(): boolean {
+  const lockFile = getLockFile();
+  try {
+    fs.mkdirSync(path.dirname(lockFile), { recursive: true });
+    const fd = fs.openSync(lockFile, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
+    fs.writeSync(fd, String(process.pid));
+    fs.closeSync(fd);
+    return true;
+  } catch {
+    // Lock file already exists — check if it's stale (> 10s old)
+    try {
+      const stat = fs.statSync(lockFile);
+      if (Date.now() - stat.mtimeMs > 10_000) {
+        // Stale lock — remove and retry once
+        fs.unlinkSync(lockFile);
+        const fd = fs.openSync(lockFile, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
+        fs.writeSync(fd, String(process.pid));
+        fs.closeSync(fd);
+        return true;
+      }
+    } catch {
+      // Another process beat us to it
+    }
+    return false;
+  }
+}
+
+function releaseLock(): void {
+  try {
+    fs.unlinkSync(getLockFile());
+  } catch {
+    // Already gone
+  }
+}
+
 export function detectPlayer(): string {
   const platform = process.platform;
   if (platform === "darwin") return "afplay";
@@ -58,40 +101,50 @@ export function isPlaying(): boolean {
 export async function play(): Promise<void> {
   if (isPlaying()) return; // Already playing, don't restart
 
-  const config = getConfig();
-  if (!config.enabled) return;
+  // Atomic lock to prevent race condition when multiple hooks fire at once
+  if (!acquireLock()) return;
 
-  let soundFile = getSoundFile(config.mode);
+  try {
+    // Double-check after acquiring lock
+    if (isPlaying()) return;
 
-  // Lazy download: if sound not found locally, try downloading from registry
-  if (!soundFile) {
-    try {
-      const { downloadSound } = await import("./registry.js");
-      soundFile = await downloadSound(config.mode);
-    } catch {
-      // Fallback to bundled elevator
-      soundFile = getSoundFile("elevator");
+    const config = getConfig();
+    if (!config.enabled) return;
+
+    let soundFile = getSoundFile(config.mode);
+
+    // Lazy download: if sound not found locally, try downloading from registry
+    if (!soundFile) {
+      try {
+        const { downloadSound } = await import("./registry.js");
+        soundFile = await downloadSound(config.mode);
+      } catch {
+        // Fallback to bundled elevator
+        soundFile = getSoundFile("elevator");
+      }
     }
+
+    if (!soundFile) return; // Nothing works, silent
+
+    const player = detectPlayer();
+    const args = buildArgs(player, config.volume, soundFile);
+
+    // Spawn looping playback in background
+    // We wrap in a shell loop for continuous play
+    const child = spawn("sh", ["-c", `while true; do ${player} ${args.map(a => `"${a}"`).join(" ")}; done`], {
+      detached: true,
+      stdio: "ignore",
+    });
+
+    child.unref();
+
+    // Save PID
+    const configDir = getConfigDir();
+    fs.mkdirSync(configDir, { recursive: true });
+    fs.writeFileSync(getPidFile(), String(child.pid));
+  } finally {
+    releaseLock();
   }
-
-  if (!soundFile) return; // Nothing works, silent
-
-  const player = detectPlayer();
-  const args = buildArgs(player, config.volume, soundFile);
-
-  // Spawn looping playback in background
-  // We wrap in a shell loop for continuous play
-  const child = spawn("sh", ["-c", `while true; do ${player} ${args.map(a => `"${a}"`).join(" ")}; done`], {
-    detached: true,
-    stdio: "ignore",
-  });
-
-  child.unref();
-
-  // Save PID
-  const configDir = getConfigDir();
-  fs.mkdirSync(configDir, { recursive: true });
-  fs.writeFileSync(getPidFile(), String(child.pid));
 }
 
 export function stop(): void {
