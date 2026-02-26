@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/educlopez/codevator/compare/v0.6.0...v0.6.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* prevent duplicate player processes with atomic lock file ([9f2e640](https://github.com/educlopez/codevator/commit/9f2e640be91cab9043efada110dee6aa35ffe5cb))
+
 # [0.6.0](https://github.com/educlopez/codevator/compare/v0.5.0...v0.6.0) (2026-02-25)
 
 
