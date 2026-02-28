@@ -1,6 +1,6 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { isValidMode } from "./config.js";
-import { play, stop, shutdown, isPlaying, getSoundFile } from "./player.js";
+import { play, stop, shutdown, isPlaying, getSoundFile, isSpotifyRunning } from "./player.js";
 import { fetchManifest, downloadSound, isInstalled, listInstalled, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
@@ -95,7 +95,9 @@ async function runMode(mode: string | undefined): Promise<void> {
       options: allModes.map((m) => ({
         value: m,
         label: m,
-        hint: (MODES as readonly string[]).includes(m) ? "built-in" : "downloaded",
+        hint: m === "spotify"
+          ? "controls Spotify volume"
+          : (MODES as readonly string[]).includes(m) ? "built-in" : "downloaded",
       })),
     });
 
@@ -113,6 +115,11 @@ async function runMode(mode: string | undefined): Promise<void> {
   }
 
   setConfig({ mode });
+
+  if (mode === "spotify" && !isSpotifyRunning()) {
+    warn("Spotify is not running. Start Spotify and play something first.");
+  }
+
   // Daemon handles mode switching with crossfade; no need to stop first
   await play();
   outro(`Mode set to: ${pc.cyan(mode)}`);
@@ -257,6 +264,9 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator volume")} <n>   Set volume (0-100)`,
       `  ${pc.cyan("npx codevator status")}       Show current settings`,
       `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
+      "",
+      `  ${pc.dim("Modes: elevator, typewriter, ambient, retro, minimal, spotify")}`,
+      `  ${pc.dim("spotify mode controls your Spotify volume (macOS only)")}`,
     ].join("\n"),
     "Elevator music for your AI coding agent"
   );

@@ -133,6 +133,289 @@ function releaseLock(): void {
   }
 }
 
+// --- Spotify helpers ---
+
+export function getSpotifyOriginalVolumeFile(): string {
+  return path.join(getConfigDir(), "spotify-original-volume");
+}
+
+export function isSpotifyRunning(): boolean {
+  if (process.platform !== "darwin") return false;
+  try {
+    const result = execSync(
+      'osascript -e \'tell application "System Events" to (name of processes) contains "Spotify"\'',
+      { encoding: "utf-8", timeout: 3000 },
+    ).trim();
+    return result === "true";
+  } catch {
+    return false;
+  }
+}
+
+function generateSpotifyJXAScript(): string {
+  return `
+ObjC.import('Foundation');
+
+var commandPath = ${JSON.stringify(getCommandFile())};
+var statePath = ${JSON.stringify(getStateFile())};
+var sessionsPath = ${JSON.stringify(getSessionsDir())};
+var originalVolumePath = ${JSON.stringify(getSpotifyOriginalVolumeFile())};
+var isActive = false;
+var FADE_STEPS = 15;
+var FADE_INTERVAL = 0.05;
+var STALE_SESSION_MS = 10 * 60 * 1000;
+var IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+var originalVolume = null;
+
+function readFile(p) {
+  try {
+    var s = $.NSString.stringWithContentsOfFileEncodingError(p, $.NSUTF8StringEncoding, null);
+    if (s && !s.isNil()) return s.js;
+  } catch(e) {}
+  return null;
+}
+
+function writeFile(p, content) {
+  var s = $.NSString.alloc.initWithUTF8String(content);
+  s.writeToFileAtomicallyEncodingError(p, true, $.NSUTF8StringEncoding, null);
+}
+
+function removeFile(p) {
+  try { $.NSFileManager.defaultManager.removeItemAtPathError(p, null); } catch(e) {}
+}
+
+function writeState(playing) {
+  writeFile(statePath, JSON.stringify({
+    playing: playing,
+    mode: 'spotify',
+    volume: originalVolume
+  }));
+}
+
+function spotifyRunning() {
+  try {
+    return Application('Spotify').running();
+  } catch(e) {
+    return false;
+  }
+}
+
+function getSpotifyVolume() {
+  try {
+    if (!spotifyRunning()) return null;
+    return Application('Spotify').soundVolume();
+  } catch(e) {
+    return null;
+  }
+}
+
+function setSpotifyVolume(vol) {
+  try {
+    if (!spotifyRunning()) return;
+    Application('Spotify').soundVolume = Math.round(Math.max(0, Math.min(100, vol)));
+  } catch(e) {}
+}
+
+function saveOriginalVolume() {
+  // Check if we already have a saved volume (from a previous daemon crash)
+  var saved = readFile(originalVolumePath);
+  if (saved !== null) {
+    originalVolume = parseInt(saved, 10);
+    if (isNaN(originalVolume) || originalVolume < 0) originalVolume = null;
+  }
+
+  if (originalVolume === null) {
+    var current = getSpotifyVolume();
+    if (current !== null && current > 0) {
+      originalVolume = current;
+    } else {
+      originalVolume = 50; // sensible default if Spotify is muted or unreachable
+    }
+  }
+  writeFile(originalVolumePath, String(originalVolume));
+}
+
+function restoreOriginalVolume() {
+  if (originalVolume !== null) {
+    setSpotifyVolume(originalVolume);
+  }
+  removeFile(originalVolumePath);
+}
+
+// --- Session checking ---
+
+function checkActiveSessions() {
+  try {
+    var fm = $.NSFileManager.defaultManager;
+    var contents = fm.contentsOfDirectoryAtPathError(sessionsPath, null);
+    if (!contents || contents.isNil() || contents.count === 0) return false;
+
+    var now = Date.now();
+    var activeCount = 0;
+
+    for (var i = 0; i < contents.count; i++) {
+      var filename = contents.objectAtIndex(i).js;
+      var filePath = sessionsPath + '/' + filename;
+      var str = readFile(filePath);
+      if (str) {
+        var ts = parseInt(str, 10);
+        if (now - ts > STALE_SESSION_MS) {
+          removeFile(filePath);
+        } else {
+          activeCount++;
+        }
+      } else {
+        removeFile(filePath);
+      }
+    }
+
+    return activeCount > 0;
+  } catch(e) {
+    return false;
+  }
+}
+
+// --- Fade controls ---
+
+function fadeIn() {
+  if (!spotifyRunning()) {
+    writeState(false);
+    return;
+  }
+  if (originalVolume === null) saveOriginalVolume();
+
+  var current = getSpotifyVolume();
+  if (current === null) return;
+
+  var target = originalVolume;
+  if (current >= target - 1) {
+    isActive = true;
+    writeState(true);
+    return;
+  }
+
+  var step = (target - current) / FADE_STEPS;
+  for (var i = 1; i <= FADE_STEPS; i++) {
+    setSpotifyVolume(current + (i * step));
+    delay(FADE_INTERVAL);
+  }
+  setSpotifyVolume(target);
+  isActive = true;
+  writeState(true);
+}
+
+function fadeOut() {
+  if (!spotifyRunning()) {
+    isActive = false;
+    writeState(false);
+    return;
+  }
+
+  var current = getSpotifyVolume();
+  if (current === null || current <= 1) {
+    isActive = false;
+    writeState(false);
+    return;
+  }
+
+  var step = current / FADE_STEPS;
+  for (var i = FADE_STEPS - 1; i >= 0; i--) {
+    setSpotifyVolume(Math.max(i * step, 0));
+    delay(FADE_INTERVAL);
+  }
+  setSpotifyVolume(0);
+  isActive = false;
+  writeState(false);
+}
+
+// --- Initialize ---
+saveOriginalVolume();
+fadeIn();
+
+// --- Main control loop ---
+var idleSince = null;
+
+while (true) {
+  // 1. Check for explicit commands
+  var raw = readFile(commandPath);
+  if (raw) {
+    try {
+      removeFile(commandPath);
+      var cmd = JSON.parse(raw);
+
+      if (cmd.action === 'fadeIn') {
+        idleSince = null;
+        fadeIn();
+      } else if (cmd.action === 'fadeOut') {
+        fadeOut();
+        idleSince = Date.now();
+      } else if (cmd.action === 'quit') {
+        fadeOut();
+        restoreOriginalVolume();
+        writeState(false);
+        break;
+      }
+    } catch(e) {}
+  }
+
+  // 2. Multi-session awareness
+  var activeSessions = checkActiveSessions();
+  if (isActive && !activeSessions) {
+    fadeOut();
+    idleSince = Date.now();
+  } else if (!isActive && activeSessions && !idleSince) {
+    fadeIn();
+  }
+
+  // 3. Auto-exit after extended idle
+  if (idleSince && (Date.now() - idleSince) > IDLE_TIMEOUT_MS) {
+    restoreOriginalVolume();
+    writeState(false);
+    break;
+  }
+
+  delay(0.25);
+}
+`;
+}
+
+function startSpotifyDaemon(): void {
+  const configDir = getConfigDir();
+  fs.mkdirSync(configDir, { recursive: true });
+
+  const script = generateSpotifyJXAScript();
+  fs.writeFileSync(getDaemonScriptFile(), script);
+
+  const child = spawn("osascript", ["-l", "JavaScript", getDaemonScriptFile()], {
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
+
+  if (child.pid) {
+    fs.writeFileSync(getDaemonPidFile(), String(child.pid));
+  }
+}
+
+async function playSpotify(): Promise<void> {
+  if (process.platform !== "darwin") return;
+
+  if (isDaemonRunning()) {
+    const state = readState();
+    if (state.mode === "spotify") {
+      // Already running as spotify daemon — just send fadeIn
+      writeCommand({ action: "fadeIn" });
+      return;
+    }
+    // Running a non-spotify daemon — kill it first
+    writeCommand({ action: "quit" });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (isDaemonRunning()) killDaemon();
+  }
+
+  startSpotifyDaemon();
+}
+
 // --- Sound file discovery ---
 
 export function detectPlayer(): string {
@@ -579,6 +862,31 @@ export async function play(): Promise<void> {
     // Register this session's heartbeat (multi-session support)
     registerSession();
 
+    // Spotify mode: control Spotify volume instead of playing sound files
+    if (config.mode === "spotify") {
+      // If a non-spotify daemon is running, kill it first
+      if (isDaemonRunning()) {
+        const state = readState();
+        if (state.mode && state.mode !== "spotify") {
+          writeCommand({ action: "quit" });
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          if (isDaemonRunning()) killDaemon();
+        }
+      }
+      await playSpotify();
+      return;
+    }
+
+    // Switching FROM spotify to a regular mode — kill the spotify daemon
+    if (isDaemonRunning()) {
+      const state = readState();
+      if (state.mode === "spotify") {
+        writeCommand({ action: "quit" });
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        if (isDaemonRunning()) killDaemon();
+      }
+    }
+
     let soundFiles = getSoundFiles(config.mode);
 
     // Lazy download if no files found
@@ -644,6 +952,8 @@ export function shutdown(): void {
       }, 2000);
     }
     killDaemon();
+    // Clean up spotify volume file (daemon's quit handler should have restored volume)
+    try { fs.unlinkSync(getSpotifyOriginalVolumeFile()); } catch {}
   } else {
     killLinuxPlayer();
   }

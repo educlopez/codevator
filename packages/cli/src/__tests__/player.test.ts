@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { detectPlayer, getPidFile, isPlaying } from "../player.js";
+import { detectPlayer, getPidFile, isPlaying, isSpotifyRunning, getSpotifyOriginalVolumeFile } from "../player.js";
 
 const TEST_DIR = path.join(os.tmpdir(), "codevator-player-test-" + Date.now());
 const TEST_CONFIG_DIR = path.join(TEST_DIR, ".codevator");
@@ -29,6 +29,25 @@ describe("detectPlayer", () => {
 describe("getPidFile", () => {
   it("returns path inside config dir", () => {
     expect(getPidFile()).toBe(path.join(TEST_CONFIG_DIR, "player.pid"));
+  });
+});
+
+describe("isSpotifyRunning", () => {
+  it("is exported as a function", () => {
+    expect(typeof isSpotifyRunning).toBe("function");
+  });
+
+  it("returns a boolean", () => {
+    const result = isSpotifyRunning();
+    expect(typeof result).toBe("boolean");
+  });
+});
+
+describe("getSpotifyOriginalVolumeFile", () => {
+  it("returns path inside config dir", () => {
+    expect(getSpotifyOriginalVolumeFile()).toBe(
+      path.join(TEST_CONFIG_DIR, "spotify-original-volume")
+    );
   });
 });
 
