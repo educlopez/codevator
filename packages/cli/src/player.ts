@@ -352,6 +352,11 @@ while (true) {
       } else if (cmd.action === 'fadeOut') {
         fadeOut();
         idleSince = Date.now();
+      } else if (cmd.action === 'restoreQuit') {
+        // All sessions ended — restore volume directly (no fade to zero)
+        restoreOriginalVolume();
+        writeState(false);
+        break;
       } else if (cmd.action === 'quit') {
         fadeOut();
         restoreOriginalVolume();
@@ -361,7 +366,7 @@ while (true) {
     } catch(e) {}
   }
 
-  // 2. Multi-session awareness
+  // 2. Multi-session awareness (stale heartbeats — Claude idle, not exited)
   var activeSessions = checkActiveSessions();
   if (isActive && !activeSessions) {
     fadeOut();
@@ -945,6 +950,21 @@ export function stop(): void {
     // Linux: no daemon, so check if any other sessions are still active
     if (!hasActiveSessions()) {
       killLinuxPlayer();
+    }
+  }
+}
+
+/** Called from SessionEnd hook when a Claude session truly exits. */
+export function sessionEnd(): void {
+  unregisterSession();
+
+  if (process.platform === "darwin" && isDaemonRunning()) {
+    if (!hasActiveSessions()) {
+      const state = readState();
+      if (state.mode === "spotify") {
+        // Last session exited — restore Spotify volume and stop daemon
+        writeCommand({ action: "restoreQuit" });
+      }
     }
   }
 }

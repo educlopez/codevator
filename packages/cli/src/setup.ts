@@ -47,6 +47,10 @@ function buildHooks() {
       matcher: "permission_prompt|idle_prompt",
       hooks: [codevatorCommand("stop")],
     },
+    SessionEnd: {
+      matcher: "",
+      hooks: [codevatorCommand("session-end")],
+    },
   };
 }
 
@@ -100,7 +104,7 @@ export function removeHooks(): void {
   const settings = readSettings();
   if (!settings.hooks) return;
 
-  for (const event of ["PreToolUse", "Stop", "Notification"]) {
+  for (const event of ["PreToolUse", "Stop", "Notification", "SessionEnd"]) {
     if (!settings.hooks[event]) continue;
     settings.hooks[event] = settings.hooks[event].filter(
       (e: any) => !isCodevatorHook(e)

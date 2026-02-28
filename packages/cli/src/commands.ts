@@ -1,13 +1,13 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { isValidMode } from "./config.js";
-import { play, stop, shutdown, isPlaying, getSoundFile, isSpotifyRunning } from "./player.js";
+import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, isSpotifyRunning } from "./player.js";
 import { fetchManifest, downloadSound, isInstalled, listInstalled, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
 const VALID_COMMANDS = [
   "setup", "mode", "add", "on", "off", "volume", "status",
-  "play", "stop", "uninstall", "help",
+  "play", "stop", "session-end", "uninstall", "help",
 ] as const;
 
 type Command = (typeof VALID_COMMANDS)[number];
@@ -43,6 +43,8 @@ export async function run(command: Command, args: string[]): Promise<void> {
       return runPlay();
     case "stop":
       return runStop();
+    case "session-end":
+      return runSessionEnd();
     case "uninstall":
       return runUninstall();
     case "help":
@@ -239,6 +241,10 @@ async function runPlay(): Promise<void> {
 
 function runStop(): void {
   stop();
+}
+
+function runSessionEnd(): void {
+  sessionEnd();
 }
 
 function runUninstall(): void {
