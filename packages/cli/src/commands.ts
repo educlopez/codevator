@@ -114,11 +114,12 @@ async function runMode(mode: string | undefined): Promise<void> {
     return;
   }
 
-  setConfig({ mode });
-
   if (mode === "spotify" && !isSpotifyRunning()) {
     warn("Spotify is not running. Start Spotify and play something first.");
+    return;
   }
+
+  setConfig({ mode });
 
   // Daemon handles mode switching with crossfade; no need to stop first
   await play();
@@ -265,7 +266,7 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator status")}       Show current settings`,
       `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
       "",
-      `  ${pc.dim("Modes: elevator, typewriter, ambient, retro, minimal, spotify")}`,
+      `  ${pc.dim(`Modes: ${MODES.join(", ")}`)}`,
       `  ${pc.dim("spotify mode controls your Spotify volume (macOS only)")}`,
     ].join("\n"),
     "Elevator music for your AI coding agent"

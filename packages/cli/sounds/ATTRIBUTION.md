@@ -24,9 +24,10 @@
 - **Source:** Bundled with codevator
 - **License:** MIT (codevator project license)
 
-### typewriter-2.mp3
-- **Source:** [Freesound](https://freesound.org/)
-- **License:** Creative Commons (see Freesound listing for specific terms)
+### typewriter-2.mp3 — "Typewriter"
+- **Author:** Zentone (Freesound user)
+- **Source:** [Freesound](https://freesound.org/people/Zentone/)
+- **License:** [Creative Commons Zero 1.0 (CC0 1.0)](https://creativecommons.org/publicdomain/zero/1.0/) — no attribution required
 
 ### ambient.mp3 (original)
 - **Source:** Bundled with codevator

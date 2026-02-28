@@ -1,7 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import * as childProcess from "node:child_process";
+
+vi.mock("node:child_process", async () => {
+  const actual = await vi.importActual<typeof import("node:child_process")>("node:child_process");
+  return { ...actual, execSync: vi.fn(actual.execSync) };
+});
+
 import { detectPlayer, getPidFile, isPlaying, isSpotifyRunning, getSpotifyOriginalVolumeFile } from "../player.js";
 
 const TEST_DIR = path.join(os.tmpdir(), "codevator-player-test-" + Date.now());
@@ -33,13 +40,36 @@ describe("getPidFile", () => {
 });
 
 describe("isSpotifyRunning", () => {
-  it("is exported as a function", () => {
-    expect(typeof isSpotifyRunning).toBe("function");
+  const originalPlatform = process.platform;
+
+  afterEach(() => {
+    Object.defineProperty(process, "platform", { value: originalPlatform });
+    vi.restoreAllMocks();
   });
 
-  it("returns a boolean", () => {
-    const result = isSpotifyRunning();
-    expect(typeof result).toBe("boolean");
+  it("returns false on non-darwin platforms", () => {
+    Object.defineProperty(process, "platform", { value: "linux" });
+    expect(isSpotifyRunning()).toBe(false);
+  });
+
+  it("returns true when osascript reports Spotify is running", () => {
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    vi.mocked(childProcess.execSync).mockReturnValue("true\n");
+    expect(isSpotifyRunning()).toBe(true);
+  });
+
+  it("returns false when osascript reports Spotify is not running", () => {
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    vi.mocked(childProcess.execSync).mockReturnValue("false\n");
+    expect(isSpotifyRunning()).toBe(false);
+  });
+
+  it("returns false when execSync throws", () => {
+    Object.defineProperty(process, "platform", { value: "darwin" });
+    vi.mocked(childProcess.execSync).mockImplementation(() => {
+      throw new Error("Command failed");
+    });
+    expect(isSpotifyRunning()).toBe(false);
   });
 });
 

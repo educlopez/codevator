@@ -45,6 +45,9 @@ let _sessionId: string | undefined;
  * Must be called before play()/stop() for correct multi-session tracking.
  */
 export function setSessionId(id: string): void {
+  if (!/^[A-Za-z0-9_-]+$/.test(id)) {
+    throw new Error(`Invalid session ID: contains disallowed characters`);
+  }
   _sessionId = id;
 }
 
@@ -465,7 +468,7 @@ export function getSoundFiles(mode: string): string[] {
         seen.add(path.basename(variant));
         files.push(variant);
       } else if (!fs.existsSync(variant)) {
-        break;
+        break; // Variants are expected to be sequentially numbered; stop at first gap
       }
     }
   }
@@ -712,7 +715,7 @@ while (true) {
       if (cmd.action === 'fadeIn') {
         idleSince = null;
         if (cmd.mode && cmd.mode !== mode && cmd.files) {
-          switchMode(cmd.mode, cmd.files, cmd.volume || targetVolume);
+          switchMode(cmd.mode, cmd.files, cmd.volume ?? targetVolume);
         } else {
           if (cmd.volume !== undefined) targetVolume = cmd.volume;
           fadeIn();
@@ -793,17 +796,21 @@ function killDaemon(): void {
 
 // --- Linux player (enhanced with file rotation) ---
 
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
 function spawnLinuxPlayer(soundFiles: string[], volume: number): void {
   const player = detectPlayer();
 
   let loopBody: string;
   if (soundFiles.length === 1) {
     const args = buildArgs(player, volume * 100, soundFiles[0]);
-    loopBody = `${player} ${args.map(a => `"${a}"`).join(" ")}`;
+    loopBody = `${shellQuote(player)} ${args.map(shellQuote).join(" ")}`;
   } else {
     const playCommands = soundFiles.map(f => {
       const args = buildArgs(player, volume * 100, f);
-      return `${player} ${args.map(a => `"${a}"`).join(" ")}`;
+      return `${shellQuote(player)} ${args.map(shellQuote).join(" ")}`;
     });
     loopBody = playCommands.join("; ");
   }
@@ -918,7 +925,9 @@ export async function play(): Promise<void> {
         startDaemon(soundFiles, volume, config.mode);
       }
     } else {
-      if (isLinuxPlayerRunning()) return;
+      if (isLinuxPlayerRunning()) {
+        killLinuxPlayer();
+      }
       spawnLinuxPlayer(soundFiles, volume);
     }
   } finally {
@@ -949,10 +958,13 @@ export function shutdown(): void {
       writeCommand({ action: "quit" });
       setTimeout(() => {
         if (isDaemonRunning()) killDaemon();
+        // Clean up spotify volume file after graceful quit attempt
+        try { fs.unlinkSync(getSpotifyOriginalVolumeFile()); } catch {}
       }, 2000);
+      return;
     }
+    // Not running — clean up stale PID/state files
     killDaemon();
-    // Clean up spotify volume file (daemon's quit handler should have restored volume)
     try { fs.unlinkSync(getSpotifyOriginalVolumeFile()); } catch {}
   } else {
     killLinuxPlayer();

@@ -76,8 +76,38 @@ function stopAll() {
     });
   }
 
-  // Schedule actual cleanup after fade completes
-  const cleanup = () => {
+  if (audioCtx && activeNodes.some((n) => n instanceof GainNode)) {
+    // Capture snapshots of resources to clean up, so a later playMode
+    // call won't have its resources torn down by this stale closure.
+    const capturedAudioEl = audioEl;
+    const capturedMediaSource = mediaSource;
+    const capturedNodes = activeNodes;
+
+    // Clear globals immediately so new playMode gets fresh state
+    audioEl = null;
+    mediaSource = null;
+    activeNodes = [];
+    currentMode = null;
+
+    const timer = setTimeout(() => {
+      if (capturedAudioEl) {
+        capturedAudioEl.pause();
+        capturedAudioEl.src = "";
+      }
+      if (capturedMediaSource) {
+        try { capturedMediaSource.disconnect(); } catch {}
+      }
+      capturedNodes.forEach((node) => {
+        try {
+          if (node instanceof OscillatorNode) node.stop();
+          if (node instanceof AudioBufferSourceNode) node.stop();
+          node.disconnect();
+        } catch {}
+      });
+    }, 550);
+    activeTimers.push(timer);
+  } else {
+    // No fade needed — clean up immediately on current globals
     if (audioEl) {
       audioEl.pause();
       audioEl.src = "";
@@ -87,7 +117,6 @@ function stopAll() {
       try { mediaSource.disconnect(); } catch {}
       mediaSource = null;
     }
-
     activeTimers.forEach(clearTimeout);
     activeTimers = [];
     activeNodes.forEach((node) => {
@@ -99,14 +128,6 @@ function stopAll() {
     });
     activeNodes = [];
     currentMode = null;
-  };
-
-  if (audioCtx && activeNodes.some((n) => n instanceof GainNode)) {
-    // Wait for fade-out to complete
-    const timer = setTimeout(cleanup, 550);
-    activeTimers.push(timer);
-  } else {
-    cleanup();
   }
 }
 
