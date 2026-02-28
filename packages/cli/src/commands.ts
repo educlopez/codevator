@@ -1,6 +1,6 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { isValidMode } from "./config.js";
-import { play, stop, isPlaying, getSoundFile } from "./player.js";
+import { play, stop, shutdown, isPlaying, getSoundFile } from "./player.js";
 import { fetchManifest, downloadSound, isInstalled, listInstalled, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
@@ -113,10 +113,8 @@ async function runMode(mode: string | undefined): Promise<void> {
   }
 
   setConfig({ mode });
-  if (isPlaying()) {
-    stop();
-    await play();
-  }
+  // Daemon handles mode switching with crossfade; no need to stop first
+  await play();
   outro(`Mode set to: ${pc.cyan(mode)}`);
 }
 
@@ -184,10 +182,7 @@ async function runAdd(name: string | undefined): Promise<void> {
   }
 
   setConfig({ mode: name });
-  if (isPlaying()) {
-    stop();
-    await play();
-  }
+  await play();
   outro(`Mode set to: ${pc.cyan(name)}`);
 }
 
@@ -197,7 +192,7 @@ function runOn(): void {
 }
 
 function runOff(): void {
-  stop();
+  shutdown();
   setConfig({ enabled: false });
   success("Sounds disabled");
 }
@@ -209,10 +204,8 @@ async function runVolume(level: string | undefined): Promise<void> {
     return;
   }
   setConfig({ volume: vol });
-  if (isPlaying()) {
-    stop();
-    await play();
-  }
+  // Daemon picks up new volume on next fadeIn; send play to apply immediately
+  await play();
   success(`Volume set to ${vol}%  ${volumeBar(vol)}`);
 }
 
@@ -244,7 +237,7 @@ function runUninstall(): void {
   intro();
   const s = p.spinner();
   s.start("Removing hooks");
-  stop();
+  shutdown();
   removeHooks();
   s.stop("Hooks removed from ~/.claude/settings.json");
   outro("Uninstalled. Config remains at ~/.codevator/");

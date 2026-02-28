@@ -6,18 +6,84 @@ import { getConfig, getConfigDir } from "./config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// --- Path helpers ---
+
 export function getPidFile(): string {
   return path.join(getConfigDir(), "player.pid");
+}
+
+function getDaemonPidFile(): string {
+  return path.join(getConfigDir(), "daemon.pid");
+}
+
+function getCommandFile(): string {
+  return path.join(getConfigDir(), "command.json");
+}
+
+function getStateFile(): string {
+  return path.join(getConfigDir(), "state.json");
+}
+
+function getDaemonScriptFile(): string {
+  return path.join(getConfigDir(), "daemon.js");
 }
 
 function getLockFile(): string {
   return path.join(getConfigDir(), "player.lock");
 }
 
+function getSessionsDir(): string {
+  return path.join(getConfigDir(), "sessions");
+}
+
+// --- Session management (multi-session support) ---
+
+const STALE_SESSION_MS = 10 * 60 * 1000; // 10 minutes
+
 /**
- * Acquire an exclusive lock using O_EXCL (atomic create-or-fail).
- * Returns true if lock acquired, false if another process holds it.
+ * Register this invocation's session. Called on every play() to act as a
+ * heartbeat — PreToolUse fires on every tool use, keeping the file fresh.
  */
+function registerSession(): void {
+  const dir = getSessionsDir();
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, String(process.ppid)), String(Date.now()));
+}
+
+/** Unregister this invocation's session (called on stop). */
+function unregisterSession(): void {
+  try {
+    fs.unlinkSync(path.join(getSessionsDir(), String(process.ppid)));
+  } catch {
+    // Already gone
+  }
+}
+
+/** Check if any non-stale session files exist. */
+function hasActiveSessions(): boolean {
+  const dir = getSessionsDir();
+  try {
+    const files = fs.readdirSync(dir);
+    const now = Date.now();
+    for (const f of files) {
+      try {
+        const ts = parseInt(fs.readFileSync(path.join(dir, f), "utf-8"), 10);
+        if (now - ts <= STALE_SESSION_MS) return true;
+        // Stale — clean up
+        fs.unlinkSync(path.join(dir, f));
+      } catch {
+        // Unreadable — remove
+        try { fs.unlinkSync(path.join(dir, f)); } catch {}
+      }
+    }
+  } catch {
+    // Dir doesn't exist
+  }
+  return false;
+}
+
+// --- Atomic lock (prevents race conditions from concurrent hook invocations) ---
+
 function acquireLock(): boolean {
   const lockFile = getLockFile();
   try {
@@ -27,11 +93,9 @@ function acquireLock(): boolean {
     fs.closeSync(fd);
     return true;
   } catch {
-    // Lock file already exists — check if it's stale (> 10s old)
     try {
       const stat = fs.statSync(lockFile);
       if (Date.now() - stat.mtimeMs > 10_000) {
-        // Stale lock — remove and retry once
         fs.unlinkSync(lockFile);
         const fd = fs.openSync(lockFile, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
         fs.writeSync(fd, String(process.pid));
@@ -39,7 +103,7 @@ function acquireLock(): boolean {
         return true;
       }
     } catch {
-      // Another process beat us to it
+      // Another process beat us
     }
     return false;
   }
@@ -53,10 +117,11 @@ function releaseLock(): void {
   }
 }
 
+// --- Sound file discovery ---
+
 export function detectPlayer(): string {
   const platform = process.platform;
   if (platform === "darwin") return "afplay";
-  // Linux: try paplay first, then aplay
   try {
     execSync("which paplay", { stdio: "ignore" });
     return "paplay";
@@ -67,30 +132,78 @@ export function detectPlayer(): string {
 
 function buildArgs(player: string, volume: number, filePath: string): string[] {
   if (player === "afplay") {
-    // afplay volume: 0.0 to 1.0
     return ["-v", String(volume / 100), filePath];
   }
-  // paplay/aplay — volume not easily controllable, just play
   return [filePath];
 }
 
 export function getSoundFile(mode: string): string | null {
-  // 1. Check user's local sounds directory (downloaded + custom)
-  const localFile = path.join(getConfigDir(), "sounds", `${mode}.mp3`);
-  if (fs.existsSync(localFile)) return localFile;
-
-  // 2. Check bundled sounds (fallback - only elevator.mp3 in package)
-  const bundledFile = path.join(__dirname, "..", "sounds", `${mode}.mp3`);
-  if (fs.existsSync(bundledFile)) return bundledFile;
-
-  return null;
+  const files = getSoundFiles(mode);
+  return files.length > 0 ? files[0] : null;
 }
 
-export function isPlaying(): boolean {
-  const pidFile = getPidFile();
+/**
+ * Get all sound files for a mode, including numbered variations.
+ * Looks for: mode.mp3, mode-2.mp3, mode-3.mp3, etc.
+ * Checks user's local sounds dir first, then bundled sounds.
+ */
+export function getSoundFiles(mode: string): string[] {
+  const seen = new Set<string>();
+  const files: string[] = [];
+
+  const localDir = path.join(getConfigDir(), "sounds");
+  const bundledDir = path.join(__dirname, "..", "sounds");
+
+  for (const dir of [localDir, bundledDir]) {
+    const primary = path.join(dir, `${mode}.mp3`);
+    if (fs.existsSync(primary) && !seen.has(path.basename(primary))) {
+      seen.add(path.basename(primary));
+      files.push(primary);
+    }
+    for (let i = 2; i <= 99; i++) {
+      const variant = path.join(dir, `${mode}-${i}.mp3`);
+      if (fs.existsSync(variant) && !seen.has(path.basename(variant))) {
+        seen.add(path.basename(variant));
+        files.push(variant);
+      } else if (!fs.existsSync(variant)) {
+        break;
+      }
+    }
+  }
+
+  return files;
+}
+
+// --- State & command management ---
+
+interface PlayerState {
+  playing: boolean;
+  mode?: string;
+  volume?: number;
+}
+
+function readState(): PlayerState {
   try {
-    const pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim(), 10);
-    // Check if process is alive
+    return JSON.parse(fs.readFileSync(getStateFile(), "utf-8"));
+  } catch {
+    return { playing: false };
+  }
+}
+
+function writeCommand(cmd: Record<string, unknown>): void {
+  const dir = getConfigDir();
+  fs.mkdirSync(dir, { recursive: true });
+  // Atomic write: write to temp file then rename
+  const tmpFile = getCommandFile() + ".tmp";
+  fs.writeFileSync(tmpFile, JSON.stringify({ ...cmd, ts: Date.now() }));
+  fs.renameSync(tmpFile, getCommandFile());
+}
+
+// --- macOS JXA daemon ---
+
+function isDaemonRunning(): boolean {
+  try {
+    const pid = parseInt(fs.readFileSync(getDaemonPidFile(), "utf-8").trim(), 10);
     process.kill(pid, 0);
     return true;
   } catch {
@@ -98,67 +211,424 @@ export function isPlaying(): boolean {
   }
 }
 
-export async function play(): Promise<void> {
-  if (isPlaying()) return; // Already playing, don't restart
+function generateJXAScript(
+  soundFiles: string[],
+  volume: number,
+  mode: string,
+): string {
+  // JXA script using AVFoundation's AVAudioPlayer for full playback control.
+  // Provides: fade in/out, position persistence, file rotation, random start,
+  // and multi-session awareness via heartbeat files.
+  return `
+ObjC.import('AVFoundation');
+ObjC.import('Foundation');
 
-  // Atomic lock to prevent race condition when multiple hooks fire at once
-  if (!acquireLock()) return;
+var soundFiles = ${JSON.stringify(soundFiles)};
+var currentIndex = 0;
+var targetVolume = ${volume};
+var mode = ${JSON.stringify(mode)};
+var commandPath = ${JSON.stringify(getCommandFile())};
+var statePath = ${JSON.stringify(getStateFile())};
+var sessionsPath = ${JSON.stringify(getSessionsDir())};
+var player = null;
+var isActive = false;
+var FADE_STEPS = 12;
+var FADE_INTERVAL = 0.06;
+var STALE_SESSION_MS = 10 * 60 * 1000;
+var IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
+function readFile(p) {
   try {
-    // Double-check after acquiring lock
-    if (isPlaying()) return;
+    var s = $.NSString.stringWithContentsOfFileEncodingError(p, $.NSUTF8StringEncoding, null);
+    if (s && !s.isNil()) return s.js;
+  } catch(e) {}
+  return null;
+}
 
-    const config = getConfig();
-    if (!config.enabled) return;
+function writeFile(p, content) {
+  var s = $.NSString.alloc.initWithUTF8String(content);
+  s.writeToFileAtomicallyEncodingError(p, true, $.NSUTF8StringEncoding, null);
+}
 
-    let soundFile = getSoundFile(config.mode);
+function removeFile(p) {
+  try { $.NSFileManager.defaultManager.removeItemAtPathError(p, null); } catch(e) {}
+}
 
-    // Lazy download: if sound not found locally, try downloading from registry
-    if (!soundFile) {
-      try {
-        const { downloadSound } = await import("./registry.js");
-        soundFile = await downloadSound(config.mode);
-      } catch {
-        // Fallback to bundled elevator
-        soundFile = getSoundFile("elevator");
+function writeState(playing) {
+  writeFile(statePath, JSON.stringify({
+    playing: playing,
+    mode: mode,
+    volume: targetVolume
+  }));
+}
+
+function createPlayer(filePath) {
+  var url = $.NSURL.fileURLWithPath(filePath);
+  var p = $.AVAudioPlayer.alloc.initWithContentsOfURLError(url, null);
+  if (!p || p.isNil()) return null;
+  p.numberOfLoops = -1;
+  p.volume = 0;
+  p.prepareToPlay;
+  return p;
+}
+
+// --- Session checking ---
+
+function checkActiveSessions() {
+  try {
+    var fm = $.NSFileManager.defaultManager;
+    var contents = fm.contentsOfDirectoryAtPathError(sessionsPath, null);
+    if (!contents || contents.isNil() || contents.count === 0) return false;
+
+    var now = Date.now();
+    var activeCount = 0;
+
+    for (var i = 0; i < contents.count; i++) {
+      var filename = contents.objectAtIndex(i).js;
+      var filePath = sessionsPath + '/' + filename;
+      var str = readFile(filePath);
+      if (str) {
+        var ts = parseInt(str, 10);
+        if (now - ts > STALE_SESSION_MS) {
+          removeFile(filePath);
+        } else {
+          activeCount++;
+        }
+      } else {
+        removeFile(filePath);
       }
     }
 
-    if (!soundFile) return; // Nothing works, silent
+    return activeCount > 0;
+  } catch(e) {
+    return false;
+  }
+}
 
-    const player = detectPlayer();
-    const args = buildArgs(player, config.volume, soundFile);
+// --- Fade controls ---
 
-    // Spawn looping playback in background
-    // We wrap in a shell loop for continuous play
-    const child = spawn("sh", ["-c", `while true; do ${player} ${args.map(a => `"${a}"`).join(" ")}; done`], {
-      detached: true,
-      stdio: "ignore",
+function fadeIn() {
+  if (!player) {
+    player = createPlayer(soundFiles[currentIndex]);
+    if (!player) return;
+    var dur = player.duration;
+    if (dur > 10) {
+      player.currentTime = Math.random() * dur;
+    }
+    player.play;
+  } else if (!player.isPlaying) {
+    player.play;
+  }
+
+  var startVol = player.volume;
+  var delta = targetVolume - startVol;
+  if (delta <= 0.01) {
+    player.volume = targetVolume;
+    isActive = true;
+    writeState(true);
+    return;
+  }
+  var step = delta / FADE_STEPS;
+  for (var i = 1; i <= FADE_STEPS; i++) {
+    player.volume = Math.min(startVol + (i * step), targetVolume);
+    delay(FADE_INTERVAL);
+  }
+  player.volume = targetVolume;
+  isActive = true;
+  writeState(true);
+}
+
+function fadeOut() {
+  if (!player) return;
+  var startVol = player.volume;
+  if (startVol <= 0.01) {
+    isActive = false;
+    writeState(false);
+    return;
+  }
+  var step = startVol / FADE_STEPS;
+  for (var i = FADE_STEPS - 1; i >= 0; i--) {
+    player.volume = Math.max(i * step, 0);
+    delay(FADE_INTERVAL);
+  }
+  player.volume = 0;
+  isActive = false;
+  writeState(false);
+}
+
+function switchMode(newMode, files, vol) {
+  fadeOut();
+  if (player) {
+    player.stop;
+    player = null;
+  }
+  mode = newMode;
+  soundFiles = files;
+  currentIndex = 0;
+  targetVolume = vol;
+  fadeIn();
+}
+
+function rotateTrack() {
+  if (soundFiles.length <= 1) return;
+  var oldPlayer = player;
+  currentIndex = (currentIndex + 1) % soundFiles.length;
+  player = createPlayer(soundFiles[currentIndex]);
+  if (!player) {
+    player = oldPlayer;
+    return;
+  }
+  player.volume = 0;
+  player.play;
+  var steps = 8;
+  var interval = 0.1;
+  for (var i = 1; i <= steps; i++) {
+    var frac = i / steps;
+    player.volume = targetVolume * frac;
+    if (oldPlayer) oldPlayer.volume = targetVolume * (1 - frac);
+    delay(interval);
+  }
+  player.volume = targetVolume;
+  if (oldPlayer) {
+    oldPlayer.stop;
+  }
+}
+
+// --- Initialize and fade in ---
+fadeIn();
+
+// --- Main control loop ---
+var idleSince = null;
+var lastRotateCheck = Date.now();
+var ROTATE_INTERVAL_MS = 3 * 60 * 1000;
+
+while (true) {
+  // 1. Check for explicit commands (fadeIn from play(), quit from shutdown())
+  var raw = readFile(commandPath);
+  if (raw) {
+    try {
+      removeFile(commandPath);
+      var cmd = JSON.parse(raw);
+
+      if (cmd.action === 'fadeIn') {
+        idleSince = null;
+        if (cmd.mode && cmd.mode !== mode && cmd.files) {
+          switchMode(cmd.mode, cmd.files, cmd.volume || targetVolume);
+        } else {
+          if (cmd.volume !== undefined) targetVolume = cmd.volume;
+          fadeIn();
+        }
+      } else if (cmd.action === 'fadeOut') {
+        fadeOut();
+        idleSince = Date.now();
+      } else if (cmd.action === 'quit') {
+        fadeOut();
+        if (player) player.stop;
+        writeState(false);
+        break;
+      }
+    } catch(e) {}
+  }
+
+  // 2. Multi-session awareness: fade based on active session count
+  var activeSessions = checkActiveSessions();
+  if (isActive && !activeSessions) {
+    // All sessions gone — fade out, but daemon stays alive
+    fadeOut();
+    idleSince = Date.now();
+  } else if (!isActive && activeSessions && !idleSince) {
+    // Edge case: sessions reappeared without a fadeIn command
+    fadeIn();
+  }
+
+  // 3. Rotate tracks for variety when multiple files available
+  if (isActive && soundFiles.length > 1) {
+    var now = Date.now();
+    if (now - lastRotateCheck > ROTATE_INTERVAL_MS) {
+      lastRotateCheck = now;
+      rotateTrack();
+    }
+  }
+
+  // 4. Auto-exit after extended idle (safety net — daemon shouldn't live forever)
+  if (idleSince && (Date.now() - idleSince) > IDLE_TIMEOUT_MS) {
+    if (player) player.stop;
+    writeState(false);
+    break;
+  }
+
+  delay(0.25);
+}
+`;
+}
+
+function startDaemon(soundFiles: string[], volume: number, mode: string): void {
+  const configDir = getConfigDir();
+  fs.mkdirSync(configDir, { recursive: true });
+
+  const script = generateJXAScript(soundFiles, volume, mode);
+  fs.writeFileSync(getDaemonScriptFile(), script);
+
+  const child = spawn("osascript", ["-l", "JavaScript", getDaemonScriptFile()], {
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
+
+  if (child.pid) {
+    fs.writeFileSync(getDaemonPidFile(), String(child.pid));
+  }
+}
+
+function killDaemon(): void {
+  try {
+    const pid = parseInt(fs.readFileSync(getDaemonPidFile(), "utf-8").trim(), 10);
+    process.kill(-pid, "SIGTERM");
+  } catch {
+    // Already dead
+  }
+  try { fs.unlinkSync(getDaemonPidFile()); } catch {}
+  try { fs.unlinkSync(getStateFile()); } catch {}
+  try { fs.unlinkSync(getCommandFile()); } catch {}
+}
+
+// --- Linux player (enhanced with file rotation) ---
+
+function spawnLinuxPlayer(soundFiles: string[], volume: number): void {
+  const player = detectPlayer();
+
+  let loopBody: string;
+  if (soundFiles.length === 1) {
+    const args = buildArgs(player, volume * 100, soundFiles[0]);
+    loopBody = `${player} ${args.map(a => `"${a}"`).join(" ")}`;
+  } else {
+    const playCommands = soundFiles.map(f => {
+      const args = buildArgs(player, volume * 100, f);
+      return `${player} ${args.map(a => `"${a}"`).join(" ")}`;
     });
+    loopBody = playCommands.join("; ");
+  }
 
-    child.unref();
+  const child = spawn("sh", ["-c", `while true; do ${loopBody}; done`], {
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
 
-    // Save PID
+  if (child.pid) {
     const configDir = getConfigDir();
     fs.mkdirSync(configDir, { recursive: true });
     fs.writeFileSync(getPidFile(), String(child.pid));
+  }
+}
+
+function killLinuxPlayer(): void {
+  const pidFile = getPidFile();
+  try {
+    const pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim(), 10);
+    process.kill(-pid, "SIGTERM");
+  } catch {
+    // Already dead
+  }
+  try { fs.unlinkSync(pidFile); } catch {}
+}
+
+function isLinuxPlayerRunning(): boolean {
+  try {
+    const pid = parseInt(fs.readFileSync(getPidFile(), "utf-8").trim(), 10);
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// --- Public API ---
+
+export function isPlaying(): boolean {
+  if (process.platform === "darwin") {
+    if (!isDaemonRunning()) return false;
+    return readState().playing;
+  }
+  return isLinuxPlayerRunning();
+}
+
+export async function play(): Promise<void> {
+  if (!acquireLock()) return;
+
+  try {
+    const config = getConfig();
+    if (!config.enabled) return;
+
+    // Register this session's heartbeat (multi-session support)
+    registerSession();
+
+    let soundFiles = getSoundFiles(config.mode);
+
+    // Lazy download if no files found
+    if (soundFiles.length === 0) {
+      try {
+        const { downloadSound } = await import("./registry.js");
+        await downloadSound(config.mode);
+        soundFiles = getSoundFiles(config.mode);
+      } catch {
+        soundFiles = getSoundFiles("elevator");
+      }
+    }
+
+    if (soundFiles.length === 0) return;
+
+    const volume = config.volume / 100;
+
+    if (process.platform === "darwin") {
+      if (isDaemonRunning()) {
+        // Daemon alive: send fadeIn command (fast path)
+        writeCommand({
+          action: "fadeIn",
+          mode: config.mode,
+          volume,
+          files: soundFiles,
+        });
+      } else {
+        // Start new daemon (it auto-fades in)
+        startDaemon(soundFiles, volume, config.mode);
+      }
+    } else {
+      if (isLinuxPlayerRunning()) return;
+      spawnLinuxPlayer(soundFiles, volume);
+    }
   } finally {
     releaseLock();
   }
 }
 
 export function stop(): void {
-  const pidFile = getPidFile();
-  try {
-    const pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim(), 10);
-    // Kill the process group (negative PID kills the group)
-    process.kill(-pid, "SIGTERM");
-  } catch {
-    // Process already dead or PID file doesn't exist
+  // Remove this session's heartbeat. The daemon detects when all sessions
+  // are gone and fades out on its own — no explicit fadeOut command needed.
+  // This means other active sessions keep their music.
+  unregisterSession();
+
+  if (process.platform !== "darwin") {
+    // Linux: no daemon, so check if any other sessions are still active
+    if (!hasActiveSessions()) {
+      killLinuxPlayer();
+    }
   }
-  try {
-    fs.unlinkSync(pidFile);
-  } catch {
-    // Already gone
+}
+
+/** Full shutdown: kill daemon process (used by uninstall/off). */
+export function shutdown(): void {
+  unregisterSession();
+
+  if (process.platform === "darwin") {
+    if (isDaemonRunning()) {
+      writeCommand({ action: "quit" });
+      setTimeout(() => {
+        if (isDaemonRunning()) killDaemon();
+      }, 2000);
+    }
+    killDaemon();
+  } else {
+    killLinuxPlayer();
   }
 }

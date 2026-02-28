@@ -66,29 +66,48 @@ export function getAnalyser(): AnalyserNode | null {
 
 
 function stopAll() {
-  // Stop MP3 playback
-  if (audioEl) {
-    audioEl.pause();
-    audioEl.src = "";
-    audioEl = null;
-  }
-  if (mediaSource) {
-    try { mediaSource.disconnect(); } catch {}
-    mediaSource = null;
+  // Fade out active gain nodes before stopping
+  if (audioCtx && activeNodes.length > 0) {
+    const now = audioCtx.currentTime;
+    activeNodes.forEach((node) => {
+      if (node instanceof GainNode) {
+        node.gain.linearRampToValueAtTime(0, now + 0.5);
+      }
+    });
   }
 
-  // Stop synthesis
-  activeTimers.forEach(clearTimeout);
-  activeTimers = [];
-  activeNodes.forEach((node) => {
-    try {
-      if (node instanceof OscillatorNode) node.stop();
-      if (node instanceof AudioBufferSourceNode) node.stop();
-      node.disconnect();
-    } catch {}
-  });
-  activeNodes = [];
-  currentMode = null;
+  // Schedule actual cleanup after fade completes
+  const cleanup = () => {
+    if (audioEl) {
+      audioEl.pause();
+      audioEl.src = "";
+      audioEl = null;
+    }
+    if (mediaSource) {
+      try { mediaSource.disconnect(); } catch {}
+      mediaSource = null;
+    }
+
+    activeTimers.forEach(clearTimeout);
+    activeTimers = [];
+    activeNodes.forEach((node) => {
+      try {
+        if (node instanceof OscillatorNode) node.stop();
+        if (node instanceof AudioBufferSourceNode) node.stop();
+        node.disconnect();
+      } catch {}
+    });
+    activeNodes = [];
+    currentMode = null;
+  };
+
+  if (audioCtx && activeNodes.some((n) => n instanceof GainNode)) {
+    // Wait for fade-out to complete
+    const timer = setTimeout(cleanup, 550);
+    activeTimers.push(timer);
+  } else {
+    cleanup();
+  }
 }
 
 // -- MP3 playback --
@@ -105,7 +124,9 @@ function playMp3(mode: string) {
   mediaSource = ctx.createMediaElementSource(audioEl);
 
   const gain = ctx.createGain();
-  gain.gain.value = 0.7;
+  // Fade in smoothly over 800ms instead of starting abruptly
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.8);
 
   mediaSource.connect(gain);
   gain.connect(dest);
