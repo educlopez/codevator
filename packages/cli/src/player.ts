@@ -36,6 +36,22 @@ function getSessionsDir(): string {
   return path.join(getConfigDir(), "sessions");
 }
 
+// --- Session identity ---
+
+let _sessionId: string | undefined;
+
+/**
+ * Set the stable session identifier (from Claude Code's hook JSON on stdin).
+ * Must be called before play()/stop() for correct multi-session tracking.
+ */
+export function setSessionId(id: string): void {
+  _sessionId = id;
+}
+
+function getSessionId(): string {
+  return _sessionId || String(process.ppid);
+}
+
 // --- Session management (multi-session support) ---
 
 const STALE_SESSION_MS = 10 * 60 * 1000; // 10 minutes
@@ -47,13 +63,13 @@ const STALE_SESSION_MS = 10 * 60 * 1000; // 10 minutes
 function registerSession(): void {
   const dir = getSessionsDir();
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, String(process.ppid)), String(Date.now()));
+  fs.writeFileSync(path.join(dir, getSessionId()), String(Date.now()));
 }
 
 /** Unregister this invocation's session (called on stop). */
 function unregisterSession(): void {
   try {
-    fs.unlinkSync(path.join(getSessionsDir(), String(process.ppid)));
+    fs.unlinkSync(path.join(getSessionsDir(), getSessionId()));
   } catch {
     // Already gone
   }
