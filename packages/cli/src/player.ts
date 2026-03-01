@@ -164,6 +164,7 @@ var statePath = ${JSON.stringify(getStateFile())};
 var sessionsPath = ${JSON.stringify(getSessionsDir())};
 var originalVolumePath = ${JSON.stringify(getSpotifyOriginalVolumeFile())};
 var isActive = false;
+var wasPlaying = false;
 var FADE_STEPS = 15;
 var FADE_INTERVAL = 0.05;
 var STALE_SESSION_MS = 10 * 60 * 1000;
@@ -219,6 +220,29 @@ function setSpotifyVolume(vol) {
   } catch(e) {}
 }
 
+function getSpotifyPlayerState() {
+  try {
+    if (!spotifyRunning()) return null;
+    return Application('Spotify').playerState();
+  } catch(e) {
+    return null;
+  }
+}
+
+function spotifyPlay() {
+  try {
+    if (!spotifyRunning()) return;
+    Application('Spotify').play();
+  } catch(e) {}
+}
+
+function spotifyPause() {
+  try {
+    if (!spotifyRunning()) return;
+    Application('Spotify').pause();
+  } catch(e) {}
+}
+
 function saveOriginalVolume() {
   // Check if we already have a saved volume (from a previous daemon crash)
   var saved = readFile(originalVolumePath);
@@ -236,11 +260,19 @@ function saveOriginalVolume() {
     }
   }
   writeFile(originalVolumePath, String(originalVolume));
+
+  // Remember if Spotify was already playing before we took control
+  var state = getSpotifyPlayerState();
+  wasPlaying = (state === 'playing');
 }
 
 function restoreOriginalVolume() {
   if (originalVolume !== null) {
     setSpotifyVolume(originalVolume);
+  }
+  // Restore playback state: if Spotify was paused before we started, pause it again
+  if (!wasPlaying) {
+    spotifyPause();
   }
   removeFile(originalVolumePath);
 }
@@ -287,6 +319,13 @@ function fadeIn() {
   }
   if (originalVolume === null) saveOriginalVolume();
 
+  // Ensure Spotify is playing
+  var state = getSpotifyPlayerState();
+  if (state !== 'playing') {
+    spotifyPlay();
+    delay(0.2);
+  }
+
   var current = getSpotifyVolume();
   if (current === null) return;
 
@@ -316,6 +355,7 @@ function fadeOut() {
 
   var current = getSpotifyVolume();
   if (current === null || current <= 1) {
+    spotifyPause();
     isActive = false;
     writeState(false);
     return;
@@ -327,6 +367,7 @@ function fadeOut() {
     delay(FADE_INTERVAL);
   }
   setSpotifyVolume(0);
+  spotifyPause();
   isActive = false;
   writeState(false);
 }
@@ -409,16 +450,9 @@ async function playSpotify(): Promise<void> {
   if (process.platform !== "darwin") return;
 
   if (isDaemonRunning()) {
-    const state = readState();
-    if (state.mode === "spotify") {
-      // Already running as spotify daemon — just send fadeIn
-      writeCommand({ action: "fadeIn" });
-      return;
-    }
-    // Running a non-spotify daemon — kill it first
-    writeCommand({ action: "quit" });
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    if (isDaemonRunning()) killDaemon();
+    // Already running as spotify daemon — just send fadeIn
+    writeCommand({ action: "fadeIn" });
+    return;
   }
 
   startSpotifyDaemon();
@@ -854,6 +888,19 @@ function isLinuxPlayerRunning(): boolean {
   }
 }
 
+// --- Daemon mode management ---
+
+async function killMismatchedDaemon(targetMode: string): Promise<void> {
+  if (!isDaemonRunning()) return;
+  const state = readState();
+  if (state.mode && state.mode !== targetMode) {
+    writeCommand({ action: "quit" });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Always clean up files — killDaemon() handles already-dead gracefully
+    killDaemon();
+  }
+}
+
 // --- Public API ---
 
 export function isPlaying(): boolean {
@@ -874,29 +921,13 @@ export async function play(): Promise<void> {
     // Register this session's heartbeat (multi-session support)
     registerSession();
 
+    // Kill any running daemon whose mode doesn't match the target
+    await killMismatchedDaemon(config.mode);
+
     // Spotify mode: control Spotify volume instead of playing sound files
     if (config.mode === "spotify") {
-      // If a non-spotify daemon is running, kill it first
-      if (isDaemonRunning()) {
-        const state = readState();
-        if (state.mode && state.mode !== "spotify") {
-          writeCommand({ action: "quit" });
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-          if (isDaemonRunning()) killDaemon();
-        }
-      }
       await playSpotify();
       return;
-    }
-
-    // Switching FROM spotify to a regular mode — kill the spotify daemon
-    if (isDaemonRunning()) {
-      const state = readState();
-      if (state.mode === "spotify") {
-        writeCommand({ action: "quit" });
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        if (isDaemonRunning()) killDaemon();
-      }
     }
 
     let soundFiles = getSoundFiles(config.mode);
@@ -930,10 +961,10 @@ export async function play(): Promise<void> {
         startDaemon(soundFiles, volume, config.mode);
       }
     } else {
-      if (isLinuxPlayerRunning()) {
-        killLinuxPlayer();
+      // Linux: only restart if not already running
+      if (!isLinuxPlayerRunning()) {
+        spawnLinuxPlayer(soundFiles, volume);
       }
-      spawnLinuxPlayer(soundFiles, volume);
     }
   } finally {
     releaseLock();
@@ -964,23 +995,32 @@ export function sessionEnd(): void {
       if (state.mode === "spotify") {
         // Last session exited — restore Spotify volume and stop daemon
         writeCommand({ action: "restoreQuit" });
+      } else {
+        // Last session exited — quit regular daemon immediately
+        writeCommand({ action: "quit" });
       }
+    }
+  }
+
+  if (process.platform !== "darwin") {
+    if (!hasActiveSessions()) {
+      killLinuxPlayer();
     }
   }
 }
 
 /** Full shutdown: kill daemon process (used by uninstall/off). */
-export function shutdown(): void {
+export async function shutdown(): Promise<void> {
   unregisterSession();
 
   if (process.platform === "darwin") {
     if (isDaemonRunning()) {
       writeCommand({ action: "quit" });
-      setTimeout(() => {
-        if (isDaemonRunning()) killDaemon();
-        // Clean up spotify volume file after graceful quit attempt
-        try { fs.unlinkSync(getSpotifyOriginalVolumeFile()); } catch {}
-      }, 2000);
+      // Wait for daemon to process quit command
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Always clean up files — killDaemon() handles already-dead gracefully
+      killDaemon();
+      try { fs.unlinkSync(getSpotifyOriginalVolumeFile()); } catch {}
       return;
     }
     // Not running — clean up stale PID/state files

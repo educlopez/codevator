@@ -34,7 +34,7 @@ export async function run(command: Command, args: string[]): Promise<void> {
     case "on":
       return runOn();
     case "off":
-      return runOff();
+      return await runOff();
     case "volume":
       return runVolume(args[0]);
     case "status":
@@ -46,7 +46,7 @@ export async function run(command: Command, args: string[]): Promise<void> {
     case "session-end":
       return runSessionEnd();
     case "uninstall":
-      return runUninstall();
+      return await runUninstall();
     case "help":
       return runHelp();
   }
@@ -201,8 +201,8 @@ function runOn(): void {
   success("Sounds enabled");
 }
 
-function runOff(): void {
-  shutdown();
+async function runOff(): Promise<void> {
+  await shutdown();
   setConfig({ enabled: false });
   success("Sounds disabled");
 }
@@ -247,11 +247,11 @@ function runSessionEnd(): void {
   sessionEnd();
 }
 
-function runUninstall(): void {
+async function runUninstall(): Promise<void> {
   intro();
   const s = p.spinner();
   s.start("Removing hooks");
-  shutdown();
+  await shutdown();
   removeHooks();
   s.stop("Hooks removed from ~/.claude/settings.json");
   outro("Uninstalled. Config remains at ~/.codevator/");

@@ -66,6 +66,10 @@ export function getAnalyser(): AnalyserNode | null {
 
 
 function stopAll() {
+  // Cancel any pending cleanup timers from previous stopAll calls
+  activeTimers.forEach(clearTimeout);
+  activeTimers = [];
+
   // Fade out active gain nodes before stopping
   if (audioCtx && activeNodes.length > 0) {
     const now = audioCtx.currentTime;
@@ -117,8 +121,6 @@ function stopAll() {
       try { mediaSource.disconnect(); } catch {}
       mediaSource = null;
     }
-    activeTimers.forEach(clearTimeout);
-    activeTimers = [];
     activeNodes.forEach((node) => {
       try {
         if (node instanceof OscillatorNode) node.stop();
@@ -165,6 +167,38 @@ export function playMode(mode: string) {
 
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("codevator:mode", { detail: mode }));
+  }
+}
+
+/** Play an arbitrary sound URL. `detail` is dispatched via codevator:mode for cross-component sync. */
+export function playFile(url: string, detail: string) {
+  if (currentMode === detail) return;
+  stopAll();
+  currentMode = detail;
+
+  const ctx = getCtx();
+  const dest = getAnalyserNode();
+
+  audioEl = new Audio();
+  audioEl.crossOrigin = "anonymous";
+  audioEl.loop = true;
+  audioEl.volume = 1;
+  audioEl.src = url;
+
+  mediaSource = ctx.createMediaElementSource(audioEl);
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 0.8);
+
+  mediaSource.connect(gain);
+  gain.connect(dest);
+  activeNodes.push(gain);
+
+  audioEl.play().catch(() => {});
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("codevator:mode", { detail }));
   }
 }
 
