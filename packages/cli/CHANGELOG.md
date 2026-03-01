@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.7.0](https://github.com/educlopez/codevator/compare/v0.6.1...v0.7.0) (2026-03-01)
+
+
+### Bug Fixes
+
+* improve audio playback reliability and harden player inputs ([2956bc4](https://github.com/educlopez/codevator/commit/2956bc4d43c399ebb847ef4eaa50416ec53d423e))
+* restore Spotify volume on session exit via SessionEnd hook ([2d153d8](https://github.com/educlopez/codevator/commit/2d153d8e991b92b17b7dad9066d4d7e93532a0d8))
+* use stable session_id from Claude Code hooks instead of process.ppid ([e80d165](https://github.com/educlopez/codevator/commit/e80d165827dd78c9cbc2213029e262d50d61d4df))
+
+
+### Features
+
+* add spotify mode to control Spotify desktop volume ([0f11ada](https://github.com/educlopez/codevator/commit/0f11adaee3507b0350a853d53a3e070084b5e929))
+* per-track playback, async shutdown, variant sound migration ([b1dc8fc](https://github.com/educlopez/codevator/commit/b1dc8fc4e92807c1a0bec4e69f8775e30f12bd36))
+* persistent audio daemon with fade, position memory, file rotation, and multi-session support ([e74231c](https://github.com/educlopez/codevator/commit/e74231cf747e768e7f6ddb76794c098a9a645f81)), closes [#3](https://github.com/educlopez/codevator/issues/3) [#2](https://github.com/educlopez/codevator/issues/2) [#1](https://github.com/educlopez/codevator/issues/1) [#4](https://github.com/educlopez/codevator/issues/4)
+
 ## [0.6.1](https://github.com/educlopez/codevator/compare/v0.6.0...v0.6.1) (2026-02-26)
 
 
