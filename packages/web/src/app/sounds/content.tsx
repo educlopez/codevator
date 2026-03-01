@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Floor5Rooftop } from "@/components/floors/Floor5Rooftop";
 import { AudioVisualizer } from "@/components/AudioVisualizer";
-import { playMode, stopAudio, unlockAudio } from "@/lib/audio";
+import { playMode, playFile, stopAudio, unlockAudio } from "@/lib/audio";
 
 interface SoundEntry {
   name: string;
   description: string;
   category: string;
   color: string;
+  files?: number;
 }
 
 interface SoundManifest {
@@ -42,13 +43,18 @@ function CopyButton({ text }: { text: string }) {
 function SoundCard({
   sound,
   isActive,
+  activeTrack,
   onToggle,
+  onPlayTrack,
 }: {
   sound: SoundEntry;
   isActive: boolean;
+  activeTrack: number | null;
   onToggle: () => void;
+  onPlayTrack: (track: number) => void;
 }) {
   const command = `npx codevator add ${sound.name}`;
+  const trackCount = sound.files ?? 1;
 
   return (
     <div
@@ -94,6 +100,34 @@ function SoundCard({
       {/* Description */}
       <p className="text-sm/7 text-olive-600">{sound.description}</p>
 
+      {/* Track buttons */}
+      {trackCount > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-olive-500 mr-1">Tracks</span>
+          {Array.from({ length: trackCount }, (_, i) => {
+            const track = i + 1;
+            const isTrackActive = isActive && activeTrack === track;
+            return (
+              <button
+                key={track}
+                onClick={() => {
+                  unlockAudio();
+                  onPlayTrack(track);
+                }}
+                className="flex size-7 items-center justify-center rounded-full text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: isTrackActive ? sound.color : `${sound.color}15`,
+                  color: isTrackActive ? "white" : sound.color,
+                }}
+                aria-label={`Play ${sound.name} track ${track}`}
+              >
+                {track}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Visualizer - only show when active */}
       {isActive && (
         <AudioVisualizer active={true} color={sound.color} />
@@ -122,13 +156,25 @@ export function SoundsContent() {
   }, []);
 
   function handleToggle(name: string) {
-    if (activeSound === name) {
+    if (activeSound?.startsWith(name)) {
       stopAudio();
       setActiveSound(null);
     } else {
       setActiveSound(name);
       playMode(name);
     }
+  }
+
+  function handlePlayTrack(name: string, track: number) {
+    const detail = track === 1 ? name : `${name}:${track}`;
+    if (activeSound === detail) {
+      stopAudio();
+      setActiveSound(null);
+      return;
+    }
+    const url = track === 1 ? `/sounds/${name}.mp3` : `/sounds/${name}-${track}.mp3`;
+    setActiveSound(detail);
+    playFile(url, detail);
   }
 
   // Sync with audio events from other components
@@ -163,14 +209,23 @@ export function SoundsContent() {
 
         {/* Sound grid */}
         <div className="grid gap-6 sm:grid-cols-2">
-          {sounds.map((sound) => (
-            <SoundCard
-              key={sound.name}
-              sound={sound}
-              isActive={activeSound === sound.name}
-              onToggle={() => handleToggle(sound.name)}
-            />
-          ))}
+          {sounds.map((sound) => {
+            const isActive = activeSound !== null && activeSound.startsWith(sound.name) &&
+              (activeSound === sound.name || activeSound[sound.name.length] === ":");
+            const activeTrack = !isActive ? null
+              : activeSound === sound.name ? 1
+              : parseInt(activeSound.split(":")[1], 10);
+            return (
+              <SoundCard
+                key={sound.name}
+                sound={sound}
+                isActive={isActive}
+                activeTrack={activeTrack}
+                onToggle={() => handleToggle(sound.name)}
+                onPlayTrack={(track) => handlePlayTrack(sound.name, track)}
+              />
+            );
+          })}
         </div>
 
         {/* CTA */}

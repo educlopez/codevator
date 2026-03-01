@@ -15,7 +15,7 @@ This installs hooks into Claude Code (`~/.claude/settings.json`) that automatica
 
 ## Sound Modes
 
-Five built-in modes:
+Six built-in modes:
 
 | Mode | Description |
 |------|-------------|
@@ -24,12 +24,23 @@ Five built-in modes:
 | `ambient` | Soft atmospheric background |
 | `retro` | Mellow 8-bit synthesized arpeggios |
 | `minimal` | Deep warm hum with slow breathing |
+| `spotify` | Controls your Spotify volume (macOS only) |
 
 Switch modes:
 
 ```bash
 npx codevator mode ambient
 ```
+
+### Spotify Mode
+
+Instead of playing bundled sounds, `spotify` mode controls the volume of your running Spotify desktop app — fading your music up when Claude is working and back down when it's idle.
+
+```bash
+npx codevator mode spotify
+```
+
+**Requirements:** macOS only. Requires the Spotify desktop app (not the web player) to be running with music already playing. Codevator saves your current Spotify volume on activation and restores it on exit. The `volume` setting is ignored in this mode — it uses your own Spotify volume as the target.
 
 ## Commands
 

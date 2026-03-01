@@ -14,6 +14,7 @@ export const MODES = [
   "ambient",
   "retro",
   "minimal",
+  "spotify",
 ] as const;
 
 export const DEFAULT_CONFIG: CodevatorConfig = {

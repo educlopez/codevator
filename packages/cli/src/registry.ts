@@ -23,6 +23,7 @@ function isValidManifest(m: unknown): m is SoundManifest {
 
 export interface SoundEntry {
   name: string;
+  files?: number;
   description: string;
   category: string;
   color: string;
@@ -75,6 +76,17 @@ export function getCachedManifest(): SoundManifest | null {
   }
 }
 
+async function downloadFile(baseUrl: string, filename: string, soundsDir: string): Promise<string> {
+  const dest = path.join(soundsDir, `${filename}.mp3`);
+  if (!dest.startsWith(soundsDir + path.sep)) throw new Error("Invalid sound name");
+  if (fs.existsSync(dest)) return dest;
+  const url = `${baseUrl}/${filename}.mp3`;
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error(`Failed to download: HTTP ${res.status}`);
+  fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+  return dest;
+}
+
 export async function downloadSound(name: string, manifest?: SoundManifest): Promise<string> {
   const m = manifest ?? await fetchManifest();
   const entry = m.sounds.find((s) => s.name === name);
@@ -82,22 +94,20 @@ export async function downloadSound(name: string, manifest?: SoundManifest): Pro
 
   const soundsDir = getSoundsDir();
   fs.mkdirSync(soundsDir, { recursive: true });
-  const dest = path.join(soundsDir, `${name}.mp3`);
 
-  // Prevent path traversal
-  if (!dest.startsWith(soundsDir + path.sep)) {
-    throw new Error(`Invalid sound name: '${name}'`);
+  // Download primary
+  const dest = await downloadFile(m.baseUrl, name, soundsDir);
+
+  // Download variants in parallel (non-fatal)
+  const fileCount = entry.files ?? 1;
+  if (fileCount > 1) {
+    await Promise.all(
+      Array.from({ length: fileCount - 1 }, (_, i) =>
+        downloadFile(m.baseUrl, `${name}-${i + 2}`, soundsDir).catch(() => {})
+      )
+    );
   }
 
-  // Skip if already downloaded
-  if (fs.existsSync(dest)) return dest;
-
-  const url = `${m.baseUrl}/${name}.mp3`;
-  const res = await fetchWithTimeout(url);
-  if (!res.ok) throw new Error(`Failed to download ${name}: HTTP ${res.status}`);
-
-  const buffer = Buffer.from(await res.arrayBuffer());
-  fs.writeFileSync(dest, buffer);
   return dest;
 }
 
@@ -112,7 +122,7 @@ export function listInstalled(): string[] {
   const dir = getSoundsDir();
   try {
     return fs.readdirSync(dir)
-      .filter((f) => f.endsWith(".mp3"))
+      .filter((f) => f.endsWith(".mp3") && !/^.+-\d+\.mp3$/.test(f))
       .map((f) => f.replace(/\.mp3$/, ""));
   } catch {
     return [];

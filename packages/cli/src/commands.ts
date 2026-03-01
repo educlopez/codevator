@@ -1,13 +1,13 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { isValidMode } from "./config.js";
-import { play, stop, isPlaying, getSoundFile } from "./player.js";
+import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, isSpotifyRunning } from "./player.js";
 import { fetchManifest, downloadSound, isInstalled, listInstalled, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
 const VALID_COMMANDS = [
   "setup", "mode", "add", "on", "off", "volume", "status",
-  "play", "stop", "uninstall", "help",
+  "play", "stop", "session-end", "uninstall", "help",
 ] as const;
 
 type Command = (typeof VALID_COMMANDS)[number];
@@ -34,7 +34,7 @@ export async function run(command: Command, args: string[]): Promise<void> {
     case "on":
       return runOn();
     case "off":
-      return runOff();
+      return await runOff();
     case "volume":
       return runVolume(args[0]);
     case "status":
@@ -43,8 +43,10 @@ export async function run(command: Command, args: string[]): Promise<void> {
       return runPlay();
     case "stop":
       return runStop();
+    case "session-end":
+      return runSessionEnd();
     case "uninstall":
-      return runUninstall();
+      return await runUninstall();
     case "help":
       return runHelp();
   }
@@ -95,7 +97,9 @@ async function runMode(mode: string | undefined): Promise<void> {
       options: allModes.map((m) => ({
         value: m,
         label: m,
-        hint: (MODES as readonly string[]).includes(m) ? "built-in" : "downloaded",
+        hint: m === "spotify"
+          ? "controls Spotify volume"
+          : (MODES as readonly string[]).includes(m) ? "built-in" : "downloaded",
       })),
     });
 
@@ -112,11 +116,15 @@ async function runMode(mode: string | undefined): Promise<void> {
     return;
   }
 
-  setConfig({ mode });
-  if (isPlaying()) {
-    stop();
-    await play();
+  if (mode === "spotify" && !isSpotifyRunning()) {
+    warn("Spotify is not running. Start Spotify and play something first.");
+    return;
   }
+
+  setConfig({ mode });
+
+  // Daemon handles mode switching with crossfade; no need to stop first
+  await play();
   outro(`Mode set to: ${pc.cyan(mode)}`);
 }
 
@@ -184,10 +192,7 @@ async function runAdd(name: string | undefined): Promise<void> {
   }
 
   setConfig({ mode: name });
-  if (isPlaying()) {
-    stop();
-    await play();
-  }
+  await play();
   outro(`Mode set to: ${pc.cyan(name)}`);
 }
 
@@ -196,8 +201,8 @@ function runOn(): void {
   success("Sounds enabled");
 }
 
-function runOff(): void {
-  stop();
+async function runOff(): Promise<void> {
+  await shutdown();
   setConfig({ enabled: false });
   success("Sounds disabled");
 }
@@ -209,10 +214,8 @@ async function runVolume(level: string | undefined): Promise<void> {
     return;
   }
   setConfig({ volume: vol });
-  if (isPlaying()) {
-    stop();
-    await play();
-  }
+  // Daemon picks up new volume on next fadeIn; send play to apply immediately
+  await play();
   success(`Volume set to ${vol}%  ${volumeBar(vol)}`);
 }
 
@@ -240,11 +243,15 @@ function runStop(): void {
   stop();
 }
 
-function runUninstall(): void {
+function runSessionEnd(): void {
+  sessionEnd();
+}
+
+async function runUninstall(): Promise<void> {
   intro();
   const s = p.spinner();
   s.start("Removing hooks");
-  stop();
+  await shutdown();
   removeHooks();
   s.stop("Hooks removed from ~/.claude/settings.json");
   outro("Uninstalled. Config remains at ~/.codevator/");
@@ -264,6 +271,9 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator volume")} <n>   Set volume (0-100)`,
       `  ${pc.cyan("npx codevator status")}       Show current settings`,
       `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
+      "",
+      `  ${pc.dim(`Modes: ${MODES.join(", ")}`)}`,
+      `  ${pc.dim("spotify mode controls your Spotify volume (macOS only)")}`,
     ].join("\n"),
     "Elevator music for your AI coding agent"
   );
