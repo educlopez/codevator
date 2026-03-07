@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.9.1](https://github.com/educlopez/codevator/compare/v0.9.0...v0.9.1) (2026-03-07)
+
 # [0.9.0](https://github.com/educlopez/codevator/compare/v0.8.0...v0.9.0) (2026-03-07)
 
 
