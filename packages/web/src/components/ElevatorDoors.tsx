@@ -11,7 +11,7 @@ async function getGsap() {
 import { unlockAudio, playMode } from "@/lib/audio";
 import { noisePattern } from "@/lib/patterns";
 import { CopyCommand } from "./CopyCommand";
-import { SoundVisualizer } from "./SoundVisualizer";
+import RetroComputer from "./RetroComputer";
 
 function DraggablePostIt({
   children,
@@ -162,9 +162,9 @@ export function ElevatorDoors() {
       {/* Interior — revealed after doors open */}
       <div className="absolute inset-0 overflow-hidden bg-olive-100">
         <section ref={interiorRef} className={`${skipped ? "" : "opacity-0 translate-y-5"} h-full flex flex-col justify-center`}>
-          <div className="mx-auto w-full max-w-2xl px-6 md:max-w-3xl lg:max-w-7xl lg:px-10 flex flex-col items-center gap-8 sm:gap-12">
-            {/* Text content */}
-            <div className="flex flex-col items-center gap-4 sm:gap-5 pt-16 sm:pt-0">
+          <div className="mx-auto w-full max-w-7xl px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-2 sm:gap-4 lg:gap-16">
+            {/* Left column — Text content */}
+            <div className="flex flex-col items-center lg:items-start gap-3 sm:gap-5 pt-20 sm:pt-0 lg:flex-1 lg:max-w-xl">
               {/* Badge */}
               <a
                 href="https://github.com/educlopez/codevator"
@@ -181,30 +181,29 @@ export function ElevatorDoors() {
                   </svg>
                 </span>
               </a>
-              <h1 className="font-display text-5xl/12 tracking-tight text-balance sm:text-[5rem]/20 text-olive-950 max-w-3xl text-center">
+              <h1 className="font-display text-5xl/12 tracking-tight text-balance sm:text-[5rem]/20 text-olive-950 max-w-3xl text-center lg:text-left">
                 Elevator music for your coding agent.
               </h1>
-              <div className="text-lg/8 text-olive-700 flex max-w-2xl flex-col gap-4 text-center">
+              <div className="text-lg/8 text-olive-700 flex max-w-2xl flex-col gap-4 text-center lg:text-left">
                 <p>
                   Background sounds that play while Claude Code works and stop when it needs your attention — so the silence doesn&apos;t drive you to a &ldquo;that&apos;s what she said&rdquo; moment.
                 </p>
               </div>
+              <CopyCommand command="npx codevator" />
+              {skipped && (
+                <button
+                  onClick={handleReplayElevator}
+                  className="text-xs text-olive-400 hover:text-olive-600 transition-colors cursor-pointer tracking-wider uppercase mt-4"
+                >
+                  Replay elevator
+                </button>
+              )}
             </div>
-            <CopyCommand command="npx codevator" />
 
-            {/* Sound visualizer */}
-            <div className="w-full max-w-2xl mt-12">
-              <SoundVisualizer />
+            {/* Right column — Retro computer */}
+            <div className="lg:flex-1 flex justify-center">
+              <RetroComputer />
             </div>
-
-            {skipped && (
-              <button
-                onClick={handleReplayElevator}
-                className="text-xs text-olive-400 hover:text-olive-600 transition-colors cursor-pointer tracking-wider uppercase"
-              >
-                Replay elevator
-              </button>
-            )}
           </div>
         </section>
       </div>
