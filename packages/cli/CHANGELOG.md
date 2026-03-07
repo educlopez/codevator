@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.8.0](https://github.com/educlopez/codevator/compare/v0.7.0...v0.8.0) (2026-03-07)
+
+
+### Features
+
+* add doctor, preview, list, and stats commands ([c19ee5d](https://github.com/educlopez/codevator/commit/c19ee5d6a799a31ac8d72bebf24af5d2f75ab019))
+
 # [0.7.0](https://github.com/educlopez/codevator/compare/v0.6.1...v0.7.0) (2026-03-01)
 
 
