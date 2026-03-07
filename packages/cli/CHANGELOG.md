@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.9.0](https://github.com/educlopez/codevator/compare/v0.8.0...v0.9.0) (2026-03-07)
+
+
+### Features
+
+* add custom sound import, profiles, and multi-agent support ([5d24e79](https://github.com/educlopez/codevator/commit/5d24e79a99d65be6a9e98ec0fb194cbee61f45c3))
+
 # [0.8.0](https://github.com/educlopez/codevator/compare/v0.7.0...v0.8.0) (2026-03-07)
 
 
