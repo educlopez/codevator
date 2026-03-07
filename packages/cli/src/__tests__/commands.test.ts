@@ -66,4 +66,61 @@ describe("parseArgs", () => {
   it("returns help for unknown command", () => {
     expect(parseArgs(["unknown"])).toEqual({ command: "help", args: [] });
   });
+
+  // New commands added in medium-features
+  it("parses 'import ./sound.mp3' command", () => {
+    expect(parseArgs(["import", "./sound.mp3"])).toEqual({
+      command: "import",
+      args: ["./sound.mp3"],
+    });
+  });
+
+  it("parses 'import ./sound.mp3 --name deep-focus --force' command", () => {
+    expect(parseArgs(["import", "./sound.mp3", "--name", "deep-focus", "--force"])).toEqual({
+      command: "import",
+      args: ["./sound.mp3", "--name", "deep-focus", "--force"],
+    });
+  });
+
+  it("parses 'remove mysound' command", () => {
+    expect(parseArgs(["remove", "mysound"])).toEqual({
+      command: "remove",
+      args: ["mysound"],
+    });
+  });
+
+  it("parses 'profile create work --mode ambient' command", () => {
+    expect(parseArgs(["profile", "create", "work", "--mode", "ambient"])).toEqual({
+      command: "profile",
+      args: ["create", "work", "--mode", "ambient"],
+    });
+  });
+
+  it("parses 'profile use work' command", () => {
+    expect(parseArgs(["profile", "use", "work"])).toEqual({
+      command: "profile",
+      args: ["use", "work"],
+    });
+  });
+
+  it("parses 'profile list' command", () => {
+    expect(parseArgs(["profile", "list"])).toEqual({
+      command: "profile",
+      args: ["list"],
+    });
+  });
+
+  it("parses 'profile delete work' command", () => {
+    expect(parseArgs(["profile", "delete", "work"])).toEqual({
+      command: "profile",
+      args: ["delete", "work"],
+    });
+  });
+
+  it("parses 'setup --agent codex' command", () => {
+    expect(parseArgs(["setup", "--agent", "codex"])).toEqual({
+      command: "setup",
+      args: ["--agent", "codex"],
+    });
+  });
 });

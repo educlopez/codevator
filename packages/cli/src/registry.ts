@@ -118,12 +118,21 @@ export function isInstalled(name: string): boolean {
   return fs.existsSync(filePath);
 }
 
+const SOUND_EXTENSIONS = [".mp3", ".wav", ".ogg", ".m4a"];
+
 export function listInstalled(): string[] {
   const dir = getSoundsDir();
   try {
-    return fs.readdirSync(dir)
-      .filter((f) => f.endsWith(".mp3") && !/^.+-\d+\.mp3$/.test(f))
-      .map((f) => f.replace(/\.mp3$/, ""));
+    const names = new Set<string>();
+    for (const f of fs.readdirSync(dir)) {
+      const ext = path.extname(f);
+      if (!SOUND_EXTENSIONS.includes(ext)) continue;
+      const base = f.slice(0, -ext.length);
+      // Skip numbered variants (e.g., mode-2.mp3)
+      if (/^.+-\d+$/.test(base)) continue;
+      names.add(base);
+    }
+    return [...names];
   } catch {
     return [];
   }

@@ -2,10 +2,18 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
+export interface SoundProfile {
+  mode: string;
+  volume: number;
+}
+
 export interface CodevatorConfig {
   mode: string;
   volume: number;
   enabled: boolean;
+  profiles?: Record<string, SoundProfile>;
+  activeProfile?: string;
+  agent?: string;
 }
 
 export const MODES = [
@@ -49,8 +57,10 @@ export function setConfig(partial: Partial<CodevatorConfig>): void {
   fs.writeFileSync(getConfigPath(), JSON.stringify(merged, null, 2));
 }
 
+const SOUND_EXTENSIONS = [".mp3", ".wav", ".ogg", ".m4a"] as const;
+
 export function isValidMode(mode: string): boolean {
   if ((MODES as readonly string[]).includes(mode)) return true;
-  const soundFile = path.join(getConfigDir(), "sounds", `${mode}.mp3`);
-  return fs.existsSync(soundFile);
+  const soundsDir = path.join(getConfigDir(), "sounds");
+  return SOUND_EXTENSIONS.some((ext) => fs.existsSync(path.join(soundsDir, `${mode}${ext}`)));
 }

@@ -484,9 +484,11 @@ export function getSoundFile(mode: string): string | null {
   return files.length > 0 ? files[0] : null;
 }
 
+const SOUND_EXTENSIONS = [".mp3", ".wav", ".ogg", ".m4a"] as const;
+
 /**
  * Get all sound files for a mode, including numbered variations.
- * Looks for: mode.mp3, mode-2.mp3, mode-3.mp3, etc.
+ * Looks for: mode.ext, mode-2.ext, mode-3.ext, etc. (ext = mp3, wav, ogg, m4a)
  * Checks user's local sounds dir first, then bundled sounds.
  */
 export function getSoundFiles(mode: string): string[] {
@@ -497,18 +499,20 @@ export function getSoundFiles(mode: string): string[] {
   const bundledDir = path.join(__dirname, "..", "sounds");
 
   for (const dir of [localDir, bundledDir]) {
-    const primary = path.join(dir, `${mode}.mp3`);
-    if (fs.existsSync(primary) && !seen.has(path.basename(primary))) {
-      seen.add(path.basename(primary));
-      files.push(primary);
-    }
-    for (let i = 2; i <= 99; i++) {
-      const variant = path.join(dir, `${mode}-${i}.mp3`);
-      if (fs.existsSync(variant) && !seen.has(path.basename(variant))) {
-        seen.add(path.basename(variant));
-        files.push(variant);
-      } else if (!fs.existsSync(variant)) {
-        break; // Variants are expected to be sequentially numbered; stop at first gap
+    for (const ext of SOUND_EXTENSIONS) {
+      const primary = path.join(dir, `${mode}${ext}`);
+      if (fs.existsSync(primary) && !seen.has(path.basename(primary))) {
+        seen.add(path.basename(primary));
+        files.push(primary);
+      }
+      for (let i = 2; i <= 99; i++) {
+        const variant = path.join(dir, `${mode}-${i}${ext}`);
+        if (fs.existsSync(variant) && !seen.has(path.basename(variant))) {
+          seen.add(path.basename(variant));
+          files.push(variant);
+        } else if (!fs.existsSync(variant)) {
+          break; // Variants are expected to be sequentially numbered; stop at first gap
+        }
       }
     }
   }

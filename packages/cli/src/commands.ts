@@ -1,9 +1,11 @@
-import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
+import { getConfig, setConfig, MODES, type CodevatorConfig, type SoundProfile } from "./config.js";
 import { isValidMode } from "./config.js";
 import { runDoctor } from "./doctor.js";
+import { importSound, removeSound } from "./import.js";
 import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, getSoundFiles, isSpotifyRunning, detectPlayer } from "./player.js";
 import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedManifest, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
+import { getAdapter, listAdapters } from "./agents/index.js";
 import { getStats } from "./stats.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
@@ -11,6 +13,7 @@ const VALID_COMMANDS = [
   "setup", "mode", "add", "on", "off", "volume", "status",
   "play", "stop", "session-end", "uninstall", "help",
   "doctor", "list", "preview", "stats",
+  "import", "remove", "profile",
 ] as const;
 
 type Command = (typeof VALID_COMMANDS)[number];
@@ -29,7 +32,7 @@ export function parseArgs(argv: string[]): { command: Command; args: string[] } 
 export async function run(command: Command, args: string[]): Promise<void> {
   switch (command) {
     case "setup":
-      return runSetup();
+      return runSetup(args);
     case "mode":
       return runMode(args[0]);
     case "add":
@@ -58,17 +61,40 @@ export async function run(command: Command, args: string[]): Promise<void> {
       return runPreview(args[0]);
     case "stats":
       return runStatsCommand();
+    case "import":
+      return runImport(args);
+    case "remove":
+      return runRemove(args[0]);
+    case "profile":
+      return runProfile(args);
     case "help":
       return runHelp();
   }
 }
 
-async function runSetup(): Promise<void> {
+async function runSetup(args: string[] = []): Promise<void> {
+  const agentIdx = args.indexOf("--agent");
+  const agentName = agentIdx !== -1 ? args[agentIdx + 1] : undefined;
+
   intro();
   const s = p.spinner();
-  s.start("Configuring hooks");
-  setupHooks();
-  s.stop("Hooks configured in ~/.claude/settings.json");
+
+  if (agentName) {
+    const adapter = getAdapter(agentName);
+    if (!adapter) {
+      s.stop("");
+      warn(`Unknown agent "${agentName}". Available agents: ${listAdapters().join(", ")}`);
+      return;
+    }
+    s.start(`Configuring hooks for ${agentName}`);
+    adapter.setupHooks();
+    setConfig({ agent: agentName });
+    s.stop(`Hooks configured for ${agentName}`);
+  } else {
+    s.start("Configuring hooks");
+    setupHooks();
+    s.stop("Hooks configured in ~/.claude/settings.json");
+  }
 
   // Download default sound if not already available (bundled or local)
   if (!getSoundFile("elevator")) {
@@ -233,9 +259,11 @@ async function runVolume(level: string | undefined): Promise<void> {
 function runStatus(): void {
   const config = getConfig();
   const playing = isPlaying();
+  const agent = config.agent ?? "claude";
   intro();
   p.note(
     [
+      `Agent    ${pc.cyan(agent)}`,
       `Mode     ${pc.cyan(config.mode)}`,
       `Volume   ${volumeBar(config.volume)} ${config.volume}%`,
       `Enabled  ${config.enabled ? pc.green("yes") : pc.red("no")}`,
@@ -263,8 +291,23 @@ async function runUninstall(): Promise<void> {
   const s = p.spinner();
   s.start("Removing hooks");
   await shutdown();
-  removeHooks();
-  s.stop("Hooks removed from ~/.claude/settings.json");
+
+  // Check if a specific agent was configured
+  const config = getConfig();
+  if (config.agent) {
+    const adapter = getAdapter(config.agent);
+    if (adapter) {
+      adapter.removeHooks();
+      s.stop(`Hooks removed for ${config.agent}`);
+    } else {
+      removeHooks();
+      s.stop("Hooks removed");
+    }
+  } else {
+    removeHooks();
+    s.stop("Hooks removed from ~/.claude/settings.json");
+  }
+
   outro("Uninstalled. Config remains at ~/.codevator/");
 }
 
@@ -401,6 +444,183 @@ export function runStatsCommand(): void {
   p.outro("");
 }
 
+async function runImport(args: string[]): Promise<void> {
+  const filePath = args[0];
+  if (!filePath) {
+    warn("Usage: npx codevator import <file> [--name <name>] [--force]");
+    return;
+  }
+
+  const nameIdx = args.indexOf("--name");
+  const name = nameIdx !== -1 ? args[nameIdx + 1] : undefined;
+  const force = args.includes("--force");
+
+  try {
+    const soundName = await importSound(filePath, { name, force });
+    success(`Imported sound "${pc.cyan(soundName)}"`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Import failed";
+
+    // If duplicate detected and --force not used, prompt the user
+    if (msg.includes("already exists") && !force) {
+      const overwrite = await p.confirm({
+        message: "Sound already exists. Overwrite?",
+      });
+
+      if (p.isCancel(overwrite) || !overwrite) {
+        warn("Import cancelled.");
+        return;
+      }
+
+      // Retry with force
+      try {
+        const soundName = await importSound(filePath, { name, force: true });
+        success(`Imported sound "${pc.cyan(soundName)}"`);
+      } catch (retryErr) {
+        warn(retryErr instanceof Error ? retryErr.message : "Import failed");
+      }
+      return;
+    }
+
+    warn(msg);
+  }
+}
+
+function runRemove(name: string | undefined): void {
+  if (!name) {
+    warn("Usage: npx codevator remove <name>");
+    return;
+  }
+
+  try {
+    removeSound(name);
+    success(`Removed sound "${pc.cyan(name)}"`);
+  } catch (err) {
+    warn(err instanceof Error ? err.message : "Remove failed");
+  }
+}
+
+async function runProfile(args: string[]): Promise<void> {
+  const subcommand = args[0];
+
+  if (!subcommand) {
+    warn("Usage: npx codevator profile <create|use|list|delete> [options]");
+    return;
+  }
+
+  switch (subcommand) {
+    case "create":
+      return runProfileCreate(args.slice(1));
+    case "use":
+      return runProfileUse(args[1]);
+    case "list":
+      return runProfileList();
+    case "delete":
+      return runProfileDelete(args[1]);
+    default:
+      warn(`Unknown profile subcommand: ${subcommand}. Use create, use, list, or delete.`);
+  }
+}
+
+async function runProfileCreate(args: string[]): Promise<void> {
+  const name = args[0];
+  if (!name) {
+    warn("Usage: npx codevator profile create <name> --mode <mode> [--volume <vol>]");
+    return;
+  }
+
+  const modeIdx = args.indexOf("--mode");
+  const mode = modeIdx !== -1 ? args[modeIdx + 1] : undefined;
+  if (!mode) {
+    warn("Profile requires --mode. Usage: npx codevator profile create <name> --mode <mode>");
+    return;
+  }
+
+  if (!isValidMode(mode)) {
+    warn(`Sound '${mode}' not found. Run ${pc.cyan("npx codevator add")} to download sounds.`);
+    return;
+  }
+
+  const volIdx = args.indexOf("--volume");
+  const volStr = volIdx !== -1 ? args[volIdx + 1] : undefined;
+  const volume = volStr !== undefined ? parseInt(volStr, 10) : 70;
+
+  if (isNaN(volume) || volume < 0 || volume > 100) {
+    warn("Volume must be between 0 and 100.");
+    return;
+  }
+
+  const config = getConfig();
+  const profiles = config.profiles ?? {};
+  profiles[name] = { mode, volume };
+  setConfig({ profiles });
+  success(`Created profile "${pc.cyan(name)}" (mode: ${mode}, volume: ${volume}%)`);
+}
+
+async function runProfileUse(name: string | undefined): Promise<void> {
+  if (!name) {
+    warn("Usage: npx codevator profile use <name>");
+    return;
+  }
+
+  const config = getConfig();
+  const profiles = config.profiles ?? {};
+  const profile = profiles[name];
+
+  if (!profile) {
+    warn(`Profile "${name}" not found. Run ${pc.cyan("npx codevator profile list")} to see available profiles.`);
+    return;
+  }
+
+  setConfig({ mode: profile.mode, volume: profile.volume, activeProfile: name });
+  await play();
+  outro(`Switched to profile "${pc.cyan(name)}" (mode: ${profile.mode}, volume: ${profile.volume}%)`);
+}
+
+function runProfileList(): void {
+  const config = getConfig();
+  const profiles = config.profiles ?? {};
+  const names = Object.keys(profiles);
+
+  if (names.length === 0) {
+    warn("No profiles configured. Use npx codevator profile create <name> --mode <mode> to create one.");
+    return;
+  }
+
+  intro();
+  const rows = names.map((name) => {
+    const prof = profiles[name];
+    const active = name === config.activeProfile ? pc.green(" (active)") : "";
+    return `  ${pc.cyan(name)}  mode: ${prof.mode}  volume: ${prof.volume}%${active}`;
+  });
+
+  p.note(rows.join("\n"), "Profiles");
+  p.outro("");
+}
+
+function runProfileDelete(name: string | undefined): void {
+  if (!name) {
+    warn("Usage: npx codevator profile delete <name>");
+    return;
+  }
+
+  const config = getConfig();
+  const profiles = config.profiles ?? {};
+
+  if (!profiles[name]) {
+    warn(`Profile "${name}" not found.`);
+    return;
+  }
+
+  delete profiles[name];
+  const updates: Partial<CodevatorConfig> = { profiles };
+  if (config.activeProfile === name) {
+    updates.activeProfile = undefined;
+  }
+  setConfig(updates);
+  success(`Deleted profile "${pc.cyan(name)}"`);
+}
+
 function runHelp(): void {
   intro();
   p.note(
@@ -408,7 +628,8 @@ function runHelp(): void {
       `Usage: ${pc.cyan("npx codevator")} <command>`,
       "",
       "Commands:",
-      `  ${pc.cyan("npx codevator")}              Install hooks (default)`,
+      `  ${pc.cyan("npx codevator")}              Install hooks (default, Claude Code)`,
+      `  ${pc.cyan("npx codevator setup --agent")} <name>  Install hooks for a specific agent`,
       `  ${pc.cyan("npx codevator mode")} <name>  Set sound mode`,
       `  ${pc.cyan("npx codevator add")} [name]   Download a sound from the registry`,
       `  ${pc.cyan("npx codevator on")} / ${pc.cyan("off")}     Enable or disable sounds`,
@@ -418,8 +639,12 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator list")}         List available sounds`,
       `  ${pc.cyan("npx codevator preview")} <m>  Preview a sound for 5 seconds`,
       `  ${pc.cyan("npx codevator stats")}        Show usage statistics`,
+      `  ${pc.cyan("npx codevator import")} <file> Import a custom sound file`,
+      `  ${pc.cyan("npx codevator remove")} <name> Remove a custom sound`,
+      `  ${pc.cyan("npx codevator profile")} ...   Manage sound profiles`,
       `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
       "",
+      `  ${pc.dim(`Agents: ${listAdapters().join(", ")}`)}`,
       `  ${pc.dim(`Modes: ${MODES.join(", ")}`)}`,
       `  ${pc.dim("spotify mode controls your Spotify volume (macOS only)")}`,
     ].join("\n"),

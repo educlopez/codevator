@@ -76,14 +76,26 @@ vi.mock("../doctor.js", () => ({
   runDoctor: vi.fn(),
 }));
 
+vi.mock("../import.js", () => ({
+  importSound: vi.fn(),
+  removeSound: vi.fn(),
+}));
+
+vi.mock("../agents/index.js", () => ({
+  getAdapter: vi.fn(),
+  listAdapters: vi.fn(() => ["claude", "codex"]),
+}));
+
 // --- Imports (after mocks) ---
 
-import { runStatsCommand, runList, runPreview } from "../commands.js";
+import { runStatsCommand, runList, runPreview, run } from "../commands.js";
 import { getStats } from "../stats.js";
 import { getConfig, isValidMode } from "../config.js";
 import { getSoundFiles, detectPlayer } from "../player.js";
 import { listInstalled, getCachedManifest } from "../registry.js";
-import { intro, outro, warn, p } from "../ui.js";
+import { intro, outro, warn, success, p } from "../ui.js";
+import { importSound } from "../import.js";
+import { setConfig } from "../config.js";
 
 // Typed mock helpers
 const mockGetStats = vi.mocked(getStats);
@@ -98,6 +110,12 @@ const mockOutro = vi.mocked(outro);
 const mockWarn = vi.mocked(warn);
 const mockPNote = vi.mocked(p.note);
 const mockPLogStep = vi.mocked(p.log.step);
+const mockPOutro = vi.mocked(p.outro);
+const mockSuccess = vi.mocked(success);
+const mockImportSound = vi.mocked(importSound);
+const mockSetConfig = vi.mocked(setConfig);
+const mockPConfirm = vi.mocked(p.confirm);
+const mockPIsCancel = vi.mocked(p.isCancel);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -320,5 +338,152 @@ describe("runPreview", () => {
 
     expect(mockIntro).toHaveBeenCalled();
     expect(mockOutro).toHaveBeenCalledWith("Preview complete (no config changed)");
+  });
+});
+
+// ============================================================
+// runProfile list
+// ============================================================
+
+describe("runProfile list", () => {
+  it("displays profile names, modes, and volumes", async () => {
+    mockGetConfig.mockReturnValue({
+      mode: "elevator",
+      volume: 70,
+      enabled: true,
+      profiles: {
+        work: { mode: "ambient", volume: 50 },
+        chill: { mode: "elevator", volume: 80 },
+      },
+      activeProfile: "work",
+    });
+
+    await run("profile", ["list"]);
+
+    expect(mockIntro).toHaveBeenCalled();
+    expect(mockPNote).toHaveBeenCalledTimes(1);
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    // Profile names
+    expect(noteContent).toContain("work");
+    expect(noteContent).toContain("chill");
+    // Modes
+    expect(noteContent).toContain("ambient");
+    expect(noteContent).toContain("elevator");
+    // Volumes
+    expect(noteContent).toContain("50%");
+    expect(noteContent).toContain("80%");
+    // Active indicator
+    expect(noteContent).toContain("(active)");
+    // Title
+    expect(mockPNote.mock.calls[0][1]).toBe("Profiles");
+  });
+
+  it("shows warning when no profiles exist", async () => {
+    mockGetConfig.mockReturnValue({
+      mode: "elevator",
+      volume: 70,
+      enabled: true,
+      profiles: {},
+    });
+
+    await run("profile", ["list"]);
+
+    expect(mockWarn).toHaveBeenCalledTimes(1);
+    expect(mockWarn.mock.calls[0][0]).toContain("No profiles configured");
+    expect(mockPNote).not.toHaveBeenCalled();
+  });
+
+  it("shows warning when profiles is undefined", async () => {
+    mockGetConfig.mockReturnValue({
+      mode: "elevator",
+      volume: 70,
+      enabled: true,
+    });
+
+    await run("profile", ["list"]);
+
+    expect(mockWarn).toHaveBeenCalledTimes(1);
+    expect(mockWarn.mock.calls[0][0]).toContain("No profiles configured");
+  });
+});
+
+// ============================================================
+// runImport — interactive duplicate prompt
+// ============================================================
+
+describe("runImport interactive duplicate prompt", () => {
+  it("prompts user on duplicate and overwrites when confirmed", async () => {
+    // First call throws duplicate error, second (with force) succeeds
+    mockImportSound
+      .mockRejectedValueOnce(new Error('Sound "mysound" already exists. Use --force to overwrite.'))
+      .mockResolvedValueOnce("mysound");
+    mockPConfirm.mockResolvedValue(true);
+    mockPIsCancel.mockReturnValue(false);
+
+    await run("import", ["/path/to/mysound.mp3"]);
+
+    // Should have prompted
+    expect(mockPConfirm).toHaveBeenCalledTimes(1);
+    expect(mockPConfirm.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ message: "Sound already exists. Overwrite?" })
+    );
+    // Should have retried with force
+    expect(mockImportSound).toHaveBeenCalledTimes(2);
+    expect(mockImportSound.mock.calls[1][1]).toEqual(
+      expect.objectContaining({ force: true })
+    );
+    // Should show success
+    expect(mockSuccess).toHaveBeenCalledTimes(1);
+    expect(mockSuccess.mock.calls[0][0]).toContain("mysound");
+  });
+
+  it("aborts import when user declines overwrite", async () => {
+    mockImportSound
+      .mockRejectedValueOnce(new Error('Sound "mysound" already exists. Use --force to overwrite.'));
+    mockPConfirm.mockResolvedValue(false);
+    mockPIsCancel.mockReturnValue(false);
+
+    await run("import", ["/path/to/mysound.mp3"]);
+
+    expect(mockPConfirm).toHaveBeenCalledTimes(1);
+    // Should NOT retry
+    expect(mockImportSound).toHaveBeenCalledTimes(1);
+    // Should warn about cancellation
+    expect(mockWarn).toHaveBeenCalledWith("Import cancelled.");
+  });
+
+  it("aborts import when user cancels prompt", async () => {
+    mockImportSound
+      .mockRejectedValueOnce(new Error('Sound "mysound" already exists. Use --force to overwrite.'));
+    mockPConfirm.mockResolvedValue(Symbol("cancel") as any);
+    mockPIsCancel.mockReturnValue(true);
+
+    await run("import", ["/path/to/mysound.mp3"]);
+
+    expect(mockImportSound).toHaveBeenCalledTimes(1);
+    expect(mockWarn).toHaveBeenCalledWith("Import cancelled.");
+  });
+
+  it("skips prompt when --force is used", async () => {
+    mockImportSound.mockResolvedValue("mysound");
+
+    await run("import", ["/path/to/mysound.mp3", "--force"]);
+
+    expect(mockPConfirm).not.toHaveBeenCalled();
+    expect(mockImportSound).toHaveBeenCalledTimes(1);
+    expect(mockImportSound.mock.calls[0][1]).toEqual(
+      expect.objectContaining({ force: true })
+    );
+    expect(mockSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows error for non-duplicate errors without prompting", async () => {
+    mockImportSound.mockRejectedValueOnce(new Error("File not found: /bad/path.mp3"));
+
+    await run("import", ["/bad/path.mp3"]);
+
+    expect(mockPConfirm).not.toHaveBeenCalled();
+    expect(mockWarn).toHaveBeenCalledWith("File not found: /bad/path.mp3");
   });
 });

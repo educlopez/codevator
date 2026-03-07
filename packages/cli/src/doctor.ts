@@ -3,6 +3,7 @@ import path from "node:path";
 import { getConfig, getConfigDir } from "./config.js";
 import { detectPlayer, getSoundFiles, isDaemonRunning, isLinuxPlayerRunning } from "./player.js";
 import { isHooksInstalled } from "./setup.js";
+import { getAdapter } from "./agents/index.js";
 
 export interface DoctorResult {
   pass: boolean;
@@ -19,6 +20,16 @@ export const checks: DoctorCheck[] = [
   {
     name: "Hooks",
     check: (): DoctorResult => {
+      const config = getConfig();
+      if (config.agent) {
+        const adapter = getAdapter(config.agent);
+        if (adapter) {
+          const installed = adapter.isInstalled();
+          return installed
+            ? { pass: true, message: `${config.agent} hooks are installed` }
+            : { pass: false, message: `${config.agent} hooks are not installed`, hint: `Run \`npx codevator setup --agent ${config.agent}\` to install hooks` };
+        }
+      }
       const installed = isHooksInstalled();
       return installed
         ? { pass: true, message: "Claude Code hooks are installed" }
