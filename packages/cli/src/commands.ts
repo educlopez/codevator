@@ -1,13 +1,16 @@
 import { getConfig, setConfig, MODES, type CodevatorConfig } from "./config.js";
 import { isValidMode } from "./config.js";
-import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, isSpotifyRunning } from "./player.js";
-import { fetchManifest, downloadSound, isInstalled, listInstalled, type SoundEntry } from "./registry.js";
+import { runDoctor } from "./doctor.js";
+import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, getSoundFiles, isSpotifyRunning, detectPlayer } from "./player.js";
+import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedManifest, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
+import { getStats } from "./stats.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
 const VALID_COMMANDS = [
   "setup", "mode", "add", "on", "off", "volume", "status",
   "play", "stop", "session-end", "uninstall", "help",
+  "doctor", "list", "preview", "stats",
 ] as const;
 
 type Command = (typeof VALID_COMMANDS)[number];
@@ -47,6 +50,14 @@ export async function run(command: Command, args: string[]): Promise<void> {
       return runSessionEnd();
     case "uninstall":
       return await runUninstall();
+    case "doctor":
+      return runDoctorCommand();
+    case "list":
+      return runList();
+    case "preview":
+      return runPreview(args[0]);
+    case "stats":
+      return runStatsCommand();
     case "help":
       return runHelp();
   }
@@ -257,6 +268,139 @@ async function runUninstall(): Promise<void> {
   outro("Uninstalled. Config remains at ~/.codevator/");
 }
 
+export async function runDoctorCommand(): Promise<void> {
+  intro();
+  const results = await runDoctor();
+  const allPass = results.every((r) => r.pass);
+
+  for (const result of results) {
+    const icon = result.pass ? pc.green("\u2713") : pc.red("\u2717");
+    p.log.step(`${icon}  ${result.message}`);
+    if (!result.pass && result.hint) {
+      p.log.step(`   ${pc.dim(result.hint)}`);
+    }
+  }
+
+  const passCount = results.filter((r) => r.pass).length;
+  if (allPass) {
+    outro(`All ${results.length} checks passed`);
+  } else {
+    outro(`${passCount}/${results.length} checks passed`);
+  }
+}
+
+export async function runList(): Promise<void> {
+  intro();
+
+  const installed = listInstalled();
+  const manifest = getCachedManifest();
+  const config = getConfig();
+
+  const rows: string[] = [];
+
+  // Show installed sounds
+  for (const name of installed) {
+    const active = name === config.mode ? pc.green(" (active)") : "";
+    const files = getSoundFiles(name);
+    rows.push(`  ${pc.cyan(name)}  ${pc.dim(`${files.length} file(s)`)}  installed${active}`);
+  }
+
+  // Show built-in modes not in installed list
+  for (const mode of MODES) {
+    if (mode === "spotify") continue;
+    if (installed.includes(mode)) continue;
+    const files = getSoundFiles(mode);
+    if (files.length > 0) {
+      const active = mode === config.mode ? pc.green(" (active)") : "";
+      rows.push(`  ${pc.cyan(mode)}  ${pc.dim(`${files.length} file(s)`)}  bundled${active}`);
+    }
+  }
+
+  // Spotify mode
+  const spotifyActive = config.mode === "spotify" ? pc.green(" (active)") : "";
+  rows.push(`  ${pc.cyan("spotify")}  ${pc.dim("controls Spotify volume")}  built-in${spotifyActive}`);
+
+  // Show available-but-not-installed from manifest
+  if (manifest) {
+    for (const entry of manifest.sounds) {
+      if (installed.includes(entry.name)) continue;
+      if ((MODES as readonly string[]).includes(entry.name)) continue;
+      rows.push(`  ${pc.dim(entry.name)}  ${pc.dim(entry.description)}  ${pc.dim("available")}`);
+    }
+  }
+
+  p.note(rows.join("\n"), "Sounds");
+  outro(`Use ${pc.cyan("npx codevator add <name>")} to download more sounds`);
+}
+
+export async function runPreview(mode: string | undefined): Promise<void> {
+  if (!mode) {
+    warn("Usage: npx codevator preview <mode>");
+    return;
+  }
+
+  if (mode === "spotify") {
+    warn("Preview is not available for spotify mode (it controls Spotify volume, not sound files).");
+    return;
+  }
+
+  if (!isValidMode(mode)) {
+    warn(`Sound '${mode}' not found. Run ${pc.cyan("npx codevator add")} to download sounds.`);
+    return;
+  }
+
+  intro();
+  const files = getSoundFiles(mode);
+  if (files.length === 0) {
+    warn(`No sound files found for mode "${mode}".`);
+    return;
+  }
+
+  const player = detectPlayer();
+  const config = getConfig();
+  const volume = config.volume / 100;
+
+  p.log.step(`Previewing ${pc.cyan(mode)} for 5 seconds...`);
+
+  const { spawn } = await import("node:child_process");
+  const args = player === "afplay"
+    ? ["-v", String(volume), files[0]]
+    : [files[0]];
+
+  const child = spawn(player, args, { stdio: "ignore" });
+
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      child.kill();
+      resolve();
+    }, 5000);
+    child.on("exit", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+
+  outro("Preview complete (no config changed)");
+}
+
+export function runStatsCommand(): void {
+  intro();
+  const stats = getStats();
+
+  const favoriteMode = Object.entries(stats.modeUsage)
+    .sort(([, a], [, b]) => b - a)[0];
+
+  const lines = [
+    `Total plays      ${pc.cyan(String(stats.totalPlays))}`,
+    `Total sessions   ${pc.cyan(String(stats.totalSessions))}`,
+    `Favorite mode    ${favoriteMode ? pc.cyan(favoriteMode[0]) : pc.dim("none yet")}`,
+    `Last played      ${stats.lastPlayed ? pc.cyan(stats.lastPlayed) : pc.dim("never")}`,
+  ];
+
+  p.note(lines.join("\n"), "Stats");
+  p.outro("");
+}
+
 function runHelp(): void {
   intro();
   p.note(
@@ -270,6 +414,10 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator on")} / ${pc.cyan("off")}     Enable or disable sounds`,
       `  ${pc.cyan("npx codevator volume")} <n>   Set volume (0-100)`,
       `  ${pc.cyan("npx codevator status")}       Show current settings`,
+      `  ${pc.cyan("npx codevator doctor")}       Check installation health`,
+      `  ${pc.cyan("npx codevator list")}         List available sounds`,
+      `  ${pc.cyan("npx codevator preview")} <m>  Preview a sound for 5 seconds`,
+      `  ${pc.cyan("npx codevator stats")}        Show usage statistics`,
       `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
       "",
       `  ${pc.dim(`Modes: ${MODES.join(", ")}`)}`,

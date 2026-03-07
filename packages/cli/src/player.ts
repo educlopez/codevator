@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getConfig, getConfigDir } from "./config.js";
+import { recordPlay } from "./stats.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -542,7 +543,7 @@ function writeCommand(cmd: Record<string, unknown>): void {
 
 // --- macOS JXA daemon ---
 
-function isDaemonRunning(): boolean {
+export function isDaemonRunning(): boolean {
   try {
     const pid = parseInt(fs.readFileSync(getDaemonPidFile(), "utf-8").trim(), 10);
     process.kill(pid, 0);
@@ -878,7 +879,7 @@ function killLinuxPlayer(): void {
   try { fs.unlinkSync(pidFile); } catch {}
 }
 
-function isLinuxPlayerRunning(): boolean {
+export function isLinuxPlayerRunning(): boolean {
   try {
     const pid = parseInt(fs.readFileSync(getPidFile(), "utf-8").trim(), 10);
     process.kill(pid, 0);
@@ -920,6 +921,9 @@ export async function play(): Promise<void> {
 
     // Register this session's heartbeat (multi-session support)
     registerSession();
+
+    // Track play stats
+    try { recordPlay(config.mode); } catch { /* stats are non-critical */ }
 
     // Kill any running daemon whose mode doesn't match the target
     await killMismatchedDaemon(config.mode);

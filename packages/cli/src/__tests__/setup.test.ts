@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { setupHooks, removeHooks } from "../setup.js";
+import { setupHooks, removeHooks, isHooksInstalled } from "../setup.js";
 
 const TEST_DIR = path.join(os.tmpdir(), "codevator-setup-test-" + Date.now());
 const TEST_CLAUDE_DIR = path.join(TEST_DIR, ".claude");
@@ -60,6 +60,43 @@ describe("setupHooks", () => {
     );
     // Should have both the existing hook and codevator hooks
     expect(settings.hooks.PreToolUse.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("isHooksInstalled", () => {
+  it("returns false when no settings file exists", () => {
+    expect(isHooksInstalled()).toBe(false);
+  });
+
+  it("returns false when settings has no hooks", () => {
+    fs.writeFileSync(
+      path.join(TEST_CLAUDE_DIR, "settings.json"),
+      JSON.stringify({ model: "opus" })
+    );
+    expect(isHooksInstalled()).toBe(false);
+  });
+
+  it("returns true after setupHooks is called", () => {
+    setupHooks();
+    expect(isHooksInstalled()).toBe(true);
+  });
+
+  it("returns false when only some hook events are present", () => {
+    fs.writeFileSync(
+      path.join(TEST_CLAUDE_DIR, "settings.json"),
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [{ matcher: "", hooks: [{ type: "command", command: "npx -y codevator play", async: true }] }],
+        },
+      })
+    );
+    expect(isHooksInstalled()).toBe(false);
+  });
+
+  it("returns false after removeHooks is called", () => {
+    setupHooks();
+    removeHooks();
+    expect(isHooksInstalled()).toBe(false);
   });
 });
 

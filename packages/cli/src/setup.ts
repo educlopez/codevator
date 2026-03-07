@@ -62,6 +62,17 @@ function isCodevatorHook(entry: any): boolean {
   );
 }
 
+export function isHooksInstalled(): boolean {
+  const settings = readSettings();
+  if (!settings.hooks) return false;
+
+  const requiredEvents = ["PreToolUse", "Stop", "Notification", "SessionEnd"];
+  return requiredEvents.every((event) => {
+    const entries = settings.hooks[event];
+    return Array.isArray(entries) && entries.some((e: any) => isCodevatorHook(e));
+  });
+}
+
 export function setupHooks(): void {
   const settings = readSettings();
   if (!settings.hooks) settings.hooks = {};

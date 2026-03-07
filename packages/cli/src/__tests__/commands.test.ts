@@ -44,6 +44,25 @@ describe("parseArgs", () => {
     expect(parseArgs([])).toEqual({ command: "setup", args: [] });
   });
 
+  it("parses 'doctor' command", () => {
+    expect(parseArgs(["doctor"])).toEqual({ command: "doctor", args: [] });
+  });
+
+  it("parses 'list' command", () => {
+    expect(parseArgs(["list"])).toEqual({ command: "list", args: [] });
+  });
+
+  it("parses 'preview elevator' command", () => {
+    expect(parseArgs(["preview", "elevator"])).toEqual({
+      command: "preview",
+      args: ["elevator"],
+    });
+  });
+
+  it("parses 'stats' command", () => {
+    expect(parseArgs(["stats"])).toEqual({ command: "stats", args: [] });
+  });
+
   it("returns help for unknown command", () => {
     expect(parseArgs(["unknown"])).toEqual({ command: "help", args: [] });
   });
