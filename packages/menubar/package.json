@@ -7,7 +7,6 @@
     "dev": "swift run --package-path . CodevatorMenuBar",
     "build": "swift build --package-path .",
     "pack": "./scripts/package-app.sh",
-    "dist": "./scripts/package-app.sh",
     "clean": "rm -rf .build release"
   }
 }

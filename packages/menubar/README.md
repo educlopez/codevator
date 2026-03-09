@@ -38,7 +38,7 @@ Drag `Codevator.app` to `/Applications`, then launch it. It will appear in your 
 
 ## How it works
 
-The app reads and writes `~/.codevator/config.json` directly — the same file the CLI uses. A `fs.watch` listener keeps the UI in sync if you use the CLI alongside the app.
+The app reads and writes `~/.codevator/config.json` directly — the same file the CLI uses. A `DispatchSourceFileSystemObject`-based file watcher keeps the UI in sync if you use the CLI alongside the app.
 
 For preview, it shells out to `npx codevator preview <mode>`.
 

@@ -19,11 +19,19 @@ enum CodevatorFonts {
 
     private static func registerFont(named fileName: String) {
         guard let url = Bundle.module.url(forResource: fileName, withExtension: nil) else {
+            #if DEBUG
+            print("[CodevatorFonts] Font file not found: \(fileName)")
+            #endif
             return
         }
 
         var error: Unmanaged<CFError>?
-        CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
+        if !CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error) {
+            #if DEBUG
+            let cfError = error?.takeRetainedValue()
+            print("[CodevatorFonts] Failed to register \(fileName): \(String(describing: cfError))")
+            #endif
+        }
     }
 }
 

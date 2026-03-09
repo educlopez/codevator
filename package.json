@@ -14,6 +14,6 @@
     "release": "pnpm --filter codevator release"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver", "@electron/node-gyp", "electron"]
+    "onlyBuiltDependencies": ["esbuild", "sharp", "unrs-resolver"]
   }
 }

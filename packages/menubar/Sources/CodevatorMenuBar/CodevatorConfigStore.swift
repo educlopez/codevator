@@ -120,9 +120,14 @@ final class CodevatorConfigStore: ObservableObject {
             process.standardError = outputPipe
 
             try process.run()
-            process.waitUntilExit()
 
-            if process.terminationStatus != 0 {
+            let status = await withCheckedContinuation { continuation in
+                process.terminationHandler = { p in
+                    continuation.resume(returning: p.terminationStatus)
+                }
+            }
+
+            if status != 0 {
                 let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
                 let message = String(data: data, encoding: .utf8)?
                     .trimmingCharacters(in: .whitespacesAndNewlines)
