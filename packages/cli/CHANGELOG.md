@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/educlopez/codevator/compare/v0.10.0...v0.10.1) (2026-03-11)
+
+
+### Bug Fixes
+
+* replace npx hook with shell fast-path to prevent process accumulation ([bb75064](https://github.com/educlopez/codevator/commit/bb750641cbd0cbda2fc424edca995806fdd4e894))
+
 # [0.10.0](https://github.com/educlopez/codevator/compare/v0.9.1...v0.10.0) (2026-03-11)
 
 
