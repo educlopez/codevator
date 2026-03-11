@@ -8,16 +8,18 @@ final class CodevatorConfigStore: ObservableObject {
     @Published private(set) var lastError: String?
 
     let configURL: URL
+    private let configDirectory: URL
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
-    private var configDirectoryDescriptor: CInt = -1
-    private var configMonitor: DispatchSourceFileSystemObject?
+    private var directoryDescriptor: CInt = -1
+    private var fileDescriptor: CInt = -1
+    private var directoryMonitor: DispatchSourceFileSystemObject?
+    private var fileMonitor: DispatchSourceFileSystemObject?
     private var reloadWorkItem: DispatchWorkItem?
-    private var volumeCommandTask: Task<Void, Never>?
+    private var volumeDebounceTask: Task<Void, Never>?
 
     init(environment: [String: String] = ProcessInfo.processInfo.environment) {
-        let configDirectory: URL
         if let customHome = environment["CODEVATOR_HOME"], !customHome.isEmpty {
             configDirectory = URL(fileURLWithPath: customHome, isDirectory: true)
         } else {
@@ -31,112 +33,74 @@ final class CodevatorConfigStore: ObservableObject {
         startMonitoring(directoryURL: configDirectory)
     }
 
+    deinit {
+        fileMonitor?.cancel()
+        directoryMonitor?.cancel()
+    }
+
+    // MARK: - Computed properties
+
     var statusImageName: String {
         config.enabled ? "music.note" : "music.note.slash"
     }
 
     var statusText: String {
-        if config.enabled {
+        if !config.enabled {
+            "Sounds disabled"
+        } else if isDaemonRunning {
             "Playing \(displayName(for: config.mode)) at \(config.volume)%"
         } else {
-            "Codevator is currently disabled"
+            "Waiting for an agent session…"
         }
     }
 
+    var isDaemonRunning: Bool {
+        let pidFile = configDirectory.appendingPathComponent("daemon.pid")
+        guard let contents = try? String(contentsOf: pidFile, encoding: .utf8),
+              let pid = Int32(contents.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return false
+        }
+        return kill(pid, 0) == 0
+    }
+
+    // MARK: - User actions
+
     func setEnabled(_ enabled: Bool) {
         updateConfig { $0.enabled = enabled }
-        Task {
-            do {
-                if enabled {
-                    try await runCodevatorCommand(["on"])
-                    try await runCodevatorCommand(["play"])
-                } else {
-                    try await runCodevatorCommand(["off"])
-                }
-                lastError = nil
-            } catch {
-                lastError = "Could not update playback: \(error.localizedDescription)"
-                refreshFromDisk()
+        if isDaemonRunning {
+            if enabled {
+                sendDaemonCommand(["action": "fadeIn", "mode": config.mode, "volume": Double(config.volume) / 100.0])
+            } else {
+                // Send quit — fadeOut alone gets overridden by the daemon's
+                // session-awareness loop which re-fades-in when heartbeats exist.
+                sendDaemonCommand(["action": "quit"])
             }
         }
     }
 
     func setMode(_ mode: String) {
-        let previousMode = config.mode
-
         if mode == CodevatorMode.spotify.rawValue, !isSpotifyInstalled() {
-            lastError = "Spotify is not installed. Keeping \(displayName(for: previousMode))."
-            refreshFromDisk()
+            lastError = "Spotify is not installed. Keeping \(displayName(for: config.mode))."
             return
         }
 
         updateConfig { $0.mode = mode }
-        Task {
-            do {
-                try await runCodevatorCommand(["mode", mode])
-                lastError = nil
-            } catch {
-                lastError = "Could not switch mode: \(error.localizedDescription)"
-                if mode == CodevatorMode.spotify.rawValue {
-                    updateConfig { $0.mode = previousMode }
-                } else {
-                    refreshFromDisk()
-                }
-            }
+        if isDaemonRunning {
+            sendDaemonCommand(["action": "fadeIn", "mode": mode, "volume": Double(config.volume) / 100.0])
         }
     }
 
     func setVolume(_ volume: Int) {
-        let clampedVolume = max(0, min(100, volume))
-        updateConfig { $0.volume = clampedVolume }
-        volumeCommandTask?.cancel()
-        volumeCommandTask = Task {
+        let clamped = max(0, min(100, volume))
+        updateConfig { $0.volume = clamped }
+
+        volumeDebounceTask?.cancel()
+        volumeDebounceTask = Task {
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
-            do {
-                try await runCodevatorCommand(["volume", String(clampedVolume)])
-                lastError = nil
-            } catch {
-                lastError = "Could not change volume: \(error.localizedDescription)"
-                refreshFromDisk()
+            if isDaemonRunning {
+                sendDaemonCommand(["action": "fadeIn", "mode": config.mode, "volume": Double(clamped) / 100.0])
             }
-        }
-    }
-
-    func previewCurrentMode() async {
-        guard !isPreviewRunning else { return }
-
-        isPreviewRunning = true
-        defer { isPreviewRunning = false }
-
-        do {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-            process.arguments = ["npx", "codevator", "preview", config.mode]
-            process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-
-            let outputPipe = Pipe()
-            process.standardOutput = outputPipe
-            process.standardError = outputPipe
-
-            try process.run()
-
-            let status = await withCheckedContinuation { continuation in
-                process.terminationHandler = { p in
-                    continuation.resume(returning: p.terminationStatus)
-                }
-            }
-
-            if status != 0 {
-                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                let message = String(data: data, encoding: .utf8)?
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                lastError = message?.isEmpty == false ? message : "Preview failed."
-            } else {
-                lastError = nil
-            }
-        } catch {
-            lastError = error.localizedDescription
         }
     }
 
@@ -151,6 +115,27 @@ final class CodevatorConfigStore: ObservableObject {
     func displayName(for mode: String) -> String {
         CodevatorMode(rawValue: mode)?.label ?? mode.capitalized
     }
+
+    // MARK: - Daemon command protocol
+
+    /// Sends a command to the running daemon via ~/.codevator/command.json
+    /// using the same atomic-write protocol as the CLI.
+    private func sendDaemonCommand(_ command: [String: Any]) {
+        var payload = command
+        payload["ts"] = Int(Date().timeIntervalSince1970 * 1000)
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: payload, options: [])
+            let commandFile = configDirectory.appendingPathComponent("command.json")
+            // .atomic writes to a temp file then uses POSIX rename (overwrites destination)
+            try data.write(to: commandFile, options: .atomic)
+            lastError = nil
+        } catch {
+            lastError = "Could not send command: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Config persistence
 
     private func updateConfig(_ mutate: (inout CodevatorConfig) -> Void) {
         var next = config
@@ -173,42 +158,13 @@ final class CodevatorConfigStore: ObservableObject {
         }
     }
 
-    private func runCodevatorCommand(_ arguments: [String]) async throws {
-        let outputPipe = Pipe()
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["npx", "codevator"] + arguments
-        process.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-
-        try process.run()
-
-        let status = await withCheckedContinuation { continuation in
-            process.terminationHandler = { process in
-                continuation.resume(returning: process.terminationStatus)
-            }
-        }
-
-        guard status == 0 else {
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let message = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            throw NSError(
-                domain: "CodevatorMenuBar",
-                code: Int(status),
-                userInfo: [
-                    NSLocalizedDescriptionKey: message?.isEmpty == false
-                        ? message!
-                        : "codevator exited with status \(status)."
-                ]
-            )
-        }
-    }
+    // MARK: - Utilities
 
     private func isSpotifyInstalled() -> Bool {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.spotify.client") != nil
     }
+
+    // MARK: - File monitoring
 
     private func startMonitoring(directoryURL: URL) {
         do {
@@ -218,26 +174,50 @@ final class CodevatorConfigStore: ObservableObject {
             return
         }
 
-        configDirectoryDescriptor = open(directoryURL.path, O_EVTONLY)
-        guard configDirectoryDescriptor >= 0 else { return }
+        // Monitor the directory — catches file creation/deletion/rename
+        directoryDescriptor = open(directoryURL.path, O_EVTONLY)
+        if directoryDescriptor >= 0 {
+            let source = DispatchSource.makeFileSystemObjectSource(
+                fileDescriptor: directoryDescriptor,
+                eventMask: [.write, .rename, .delete],
+                queue: .main
+            )
+            source.setEventHandler { [weak self] in
+                guard let self else { return }
+                // Re-attach file monitor in case config.json was recreated
+                self.attachFileMonitor()
+                self.scheduleReload()
+            }
+            source.setCancelHandler { [descriptor = directoryDescriptor] in
+                if descriptor >= 0 { close(descriptor) }
+            }
+            directoryMonitor = source
+            source.resume()
+        }
+
+        // Monitor config.json directly — catches in-place content writes
+        attachFileMonitor()
+    }
+
+    private func attachFileMonitor() {
+        fileMonitor?.cancel()
+
+        let fd = open(configURL.path, O_EVTONLY)
+        guard fd >= 0 else { return }
+        fileDescriptor = fd
 
         let source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: configDirectoryDescriptor,
-            eventMask: [.write, .rename, .delete, .attrib, .extend],
+            fileDescriptor: fd,
+            eventMask: [.write, .rename, .delete, .extend, .attrib],
             queue: .main
         )
-
         source.setEventHandler { [weak self] in
             self?.scheduleReload()
         }
-
-        source.setCancelHandler { [descriptor = configDirectoryDescriptor] in
-            if descriptor >= 0 {
-                close(descriptor)
-            }
+        source.setCancelHandler {
+            close(fd)
         }
-
-        configMonitor = source
+        fileMonitor = source
         source.resume()
     }
 

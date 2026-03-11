@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "CodevatorMenuBar",
     platforms: [
-        .macOS("26.0")
+        .macOS(.v14)
     ],
     products: [
         .executable(name: "CodevatorMenuBar", targets: ["CodevatorMenuBar"])
@@ -12,10 +12,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "CodevatorMenuBar",
-            path: "Sources/CodevatorMenuBar",
-            resources: [
-                .process("Resources")
-            ]
+            path: "Sources/CodevatorMenuBar"
         )
     ]
 )
