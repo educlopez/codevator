@@ -43,6 +43,7 @@ vi.mock("../stats.js", () => ({
 vi.mock("../config.js", () => ({
   getConfig: vi.fn(),
   setConfig: vi.fn(),
+  getConfigDir: vi.fn(() => "/tmp/codevator-test"),
   isValidMode: vi.fn(),
   MODES: ["elevator", "typewriter", "ambient", "retro", "minimal", "spotify"],
 }));
