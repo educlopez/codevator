@@ -16,7 +16,7 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "release": "GITHUB_TOKEN=$(gh auth token) release-it && gh release create v$(node -p \"require('./package.json').version\") --generate-notes && npm publish"
+    "release": "GITHUB_TOKEN=$(gh auth token) release-it --ci && gh release create v$(node -p \"require('./package.json').version\") --generate-notes && npm publish"
   },
   "keywords": [
     "claude",
