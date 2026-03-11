@@ -4,9 +4,12 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "dev:cli": "pnpm --filter codevator dev",
+    "dev:menubar": "pnpm --filter @codevator/menubar dev",
     "build": "pnpm -r build",
     "build:web": "pnpm --filter web build",
     "build:cli": "pnpm --filter codevator build",
+    "build:menubar": "pnpm --filter @codevator/menubar build",
+    "pack:menubar": "pnpm --filter @codevator/menubar pack",
     "test": "pnpm -r test",
     "release": "pnpm --filter codevator release"
   },
