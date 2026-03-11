@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import type { AgentAdapter } from "./types.js";
+import { getConfigDir } from "../config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,11 +34,79 @@ function codevatorCommand(sub: string, extra?: Record<string, boolean>): Record<
   return { type: "command", command: `npx -y codevator ${sub}`, ...extra };
 }
 
+function getPlayHookPath(): string {
+  return path.join(getConfigDir(), "play-hook.sh");
+}
+
+/**
+ * Generate a lightweight shell script that acts as the PreToolUse hook.
+ * When the daemon is already running (99% of invocations), this writes the
+ * session heartbeat and exits immediately — no Node.js process needed.
+ * Only falls through to `npx -y codevator play` for cold starts.
+ */
+function generatePlayHookScript(): string {
+  const configDir = getConfigDir();
+  return `#!/bin/bash
+# Codevator fast-path play hook
+# Avoids spawning node when daemon is already running
+DIR="${configDir}"
+DAEMON_PID="\${DIR}/daemon.pid"
+CONFIG="\${DIR}/config.json"
+SESSIONS="\${DIR}/sessions"
+LOCK="\${DIR}/player.lock"
+
+# Read stdin (Claude passes hook context as JSON)
+INPUT=""
+if [ ! -t 0 ]; then
+  INPUT=$(cat)
+fi
+
+# Check if enabled (quick grep of config.json)
+if [ -f "$CONFIG" ]; then
+  if grep -q '"enabled":false' "$CONFIG" 2>/dev/null || grep -q '"enabled": false' "$CONFIG" 2>/dev/null; then
+    exit 0
+  fi
+fi
+
+# Extract session_id from JSON stdin
+SID=$(echo "$INPUT" | grep -o '"session_id":"[^"]*"' | head -1 | cut -d'"' -f4)
+[ -z "$SID" ] && SID="$$"
+
+# Always write session heartbeat
+mkdir -p "$SESSIONS"
+echo "$(date +%s)000" > "\${SESSIONS}/\${SID}"
+
+# Fast path: if daemon is alive, heartbeat is enough — exit now
+if [ -f "$DAEMON_PID" ]; then
+  PID=$(cat "$DAEMON_PID" 2>/dev/null)
+  if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+    exit 0
+  fi
+fi
+
+# Slow path: daemon not running, need full codevator to start it
+echo "$INPUT" | npx -y codevator play
+`;
+}
+
+function installPlayHook(): void {
+  const hookPath = getPlayHookPath();
+  const dir = path.dirname(hookPath);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(hookPath, generatePlayHookScript());
+  fs.chmodSync(hookPath, 0o755);
+}
+
+function removePlayHook(): void {
+  try { fs.unlinkSync(getPlayHookPath()); } catch {}
+}
+
 function buildHooks() {
+  const hookPath = getPlayHookPath();
   return {
     PreToolUse: {
       matcher: "",
-      hooks: [codevatorCommand("play", { async: true })],
+      hooks: [{ type: "command", command: `bash ${hookPath}`, async: true }],
     },
     Stop: {
       matcher: "",
@@ -58,7 +127,9 @@ function isCodevatorHook(entry: any): boolean {
   return entry?.hooks?.some(
     (h: any) =>
       typeof h.command === "string" &&
-      (h.command.startsWith("codevator") || h.command.includes("npx -y codevator"))
+      (h.command.startsWith("codevator") ||
+       h.command.includes("npx -y codevator") ||
+       h.command.includes("play-hook.sh"))
   );
 }
 
@@ -116,6 +187,7 @@ export const claudeAdapter: AgentAdapter = {
 
     writeSettings(settings);
     installSkill();
+    installPlayHook();
   },
 
   removeHooks(): void {
@@ -138,5 +210,6 @@ export const claudeAdapter: AgentAdapter = {
 
     writeSettings(settings);
     removeSkill();
+    removePlayHook();
   },
 };

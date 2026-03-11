@@ -917,14 +917,15 @@ export function isPlaying(): boolean {
 }
 
 export async function play(): Promise<void> {
+  // Always register heartbeat, even if we can't acquire the lock.
+  // This ensures every hook invocation keeps the session alive for the daemon.
+  registerSession();
+
   if (!acquireLock()) return;
 
   try {
     const config = getConfig();
     if (!config.enabled) return;
-
-    // Register this session's heartbeat (multi-session support)
-    registerSession();
 
     // Launch menu bar app if installed but not running (macOS only)
     if (process.platform === "darwin") {
