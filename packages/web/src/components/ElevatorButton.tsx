@@ -1,5 +1,7 @@
+import type { ReactNode } from "react";
+
 interface ElevatorButtonProps {
-  label: string;
+  label: ReactNode;
   active: boolean;
   onClick: () => void;
   color?: string;

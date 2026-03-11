@@ -36,6 +36,13 @@
       "description": "A deep hum. Almost nothing. For those who prefer quiet contemplation.",
       "category": "built-in",
       "color": "#999999"
+    },
+    {
+      "name": "spotify",
+      "files": 0,
+      "description": "Controls your Spotify playback volume. Music fades in when coding starts, fades out when done.",
+      "category": "integration",
+      "color": "#1DB954"
     }
   ]
 }

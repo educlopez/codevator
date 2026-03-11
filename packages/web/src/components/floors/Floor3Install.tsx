@@ -82,7 +82,6 @@ export function Floor3Install() {
   const blue = "#82bdd4";
   const purple = "#c98fd0";
   const brown = "#d49a6e";
-
   const [visible, setVisible] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -152,7 +151,7 @@ export function Floor3Install() {
           <StepCard
             number={3}
             title="Customize"
-            description="Switch modes, adjust volume, or tell your agent directly. It listens."
+            description="Switch modes, adjust volume, or tell your agent directly. On macOS, you can also install the menubar app for visual controls."
             gradientFrom="#8d7359"
             gradientTo="#765959"
             visible={visible}

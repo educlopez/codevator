@@ -12,14 +12,14 @@ export const FALLBACK_ITEMS: RoadmapItem[] = [
   {
     title: "Multi-agent mode",
     description:
-      "Each agent plays a different instrument. The group of agents generates a final high-quality song together in real time.",
-    status: "Exploring",
+      "Set up codevator for Claude Code, Codex, or OpenCode. Each agent gets its own hooks and session tracking.",
+    status: "Done",
   },
   {
     title: "Spotify integration",
     description:
-      "Connect your Spotify account and use your own playlists as a sound mode. Music starts and stops with your agent.",
-    status: "Exploring",
+      "Use Spotify as a sound mode on macOS. Codevator fades your music in when coding starts and fades out when done.",
+    status: "Done",
   },
   {
     title: "Custom sounds",

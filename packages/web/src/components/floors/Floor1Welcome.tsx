@@ -15,6 +15,9 @@ export function Floor1Welcome() {
               <h2 className="font-display text-3xl md:text-4xl text-olive-700 leading-snug tracking-tight text-pretty">
                 Ambient music while your agent codes — so the silence doesn&apos;t feel so long.
               </h2>
+              <p className="text-sm/7 text-olive-600">
+                Run it from the terminal, or use the menubar app on macOS.
+              </p>
             </div>
             <a
               href="https://github.com/educlopez/codevator"

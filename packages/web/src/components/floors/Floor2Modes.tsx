@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { ElevatorButton } from "../ElevatorButton";
 import { AudioVisualizer } from "../AudioVisualizer";
 import { playMode, stopAudio } from "@/lib/audio";
@@ -14,31 +14,77 @@ interface SoundEntry {
 
 interface ModeItem {
   id: string;
-  label: string;
+  label: ReactNode;
   description: string;
   color: string;
 }
 
-const LABEL_MAP: Record<string, string> = {
-  elevator: "Elvtr",
-  typewriter: "Type",
-  ambient: "Rain",
-  retro: "8bit",
-  minimal: "Min",
+const MODE_ICONS: Record<string, ReactNode> = {
+  elevator: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="12" y1="3" x2="12" y2="21" />
+      <polyline points="8 9 6 12 8 15" />
+      <polyline points="16 9 18 12 16 15" />
+    </svg>
+  ),
+  typewriter: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <rect x="2" y="14" width="20" height="6" rx="2" />
+      <path d="M6 14V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8" />
+      <line x1="6" y1="18" x2="6" y2="18" />
+      <line x1="10" y1="18" x2="10" y2="18" />
+      <line x1="14" y1="18" x2="14" y2="18" />
+      <line x1="18" y1="18" x2="18" y2="18" />
+    </svg>
+  ),
+  ambient: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+      <circle cx="12" cy="12" r="4" />
+    </svg>
+  ),
+  retro: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M7 15v-4l3 2-3 2z" />
+      <line x1="14" y1="9" x2="14" y2="15" />
+      <line x1="17" y1="11" x2="17" y2="15" />
+    </svg>
+  ),
+  minimal: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </svg>
+  ),
+  spotify: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-6">
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+    </svg>
+  ),
 };
 
 const FALLBACK_MODES: ModeItem[] = [
-  { id: "elevator", label: "Elvtr", description: "Lo-fi warmth. The default. Like being on hold with the future.", color: "#1a6b4a" },
-  { id: "typewriter", label: "Type", description: "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.", color: "#8B7355" },
-  { id: "ambient", label: "Rain", description: "Gentle rain and a low drone. The outside world, piped in.", color: "#4a7ab5" },
-  { id: "retro", label: "8bit", description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.", color: "#a855f7" },
-  { id: "minimal", label: "Min", description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.", color: "#999999" },
+  { id: "elevator", label: MODE_ICONS.elevator, description: "Lo-fi warmth. The default. Like being on hold with the future.", color: "#1a6b4a" },
+  { id: "typewriter", label: MODE_ICONS.typewriter, description: "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.", color: "#8B7355" },
+  { id: "ambient", label: MODE_ICONS.ambient, description: "Gentle rain and a low drone. The outside world, piped in.", color: "#4a7ab5" },
+  { id: "retro", label: MODE_ICONS.retro, description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.", color: "#a855f7" },
+  { id: "minimal", label: MODE_ICONS.minimal, description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.", color: "#999999" },
+  { id: "spotify", label: MODE_ICONS.spotify, description: "Controls your Spotify playback volume. Music fades in when coding starts, fades out when done.", color: "#1DB954" },
 ];
 
 function toModeItem(sound: SoundEntry): ModeItem {
   return {
     id: sound.name,
-    label: LABEL_MAP[sound.name] ?? sound.name.slice(0, 4),
+    label: MODE_ICONS[sound.name] ?? <span className="text-xs font-semibold uppercase">{sound.name.slice(0, 4)}</span>,
     description: sound.description,
     color: sound.color,
   };
@@ -52,7 +98,7 @@ export function Floor2Modes() {
     fetch("/sounds.json")
       .then((res) => res.json())
       .then((data: { sounds: SoundEntry[] }) => {
-        const builtIn = data.sounds.filter((s) => s.category === "built-in");
+        const builtIn = data.sounds.filter((s) => s.category === "built-in" || s.category === "integration");
         if (builtIn.length > 0) {
           setModes(builtIn.map(toModeItem));
         }
@@ -70,11 +116,12 @@ export function Floor2Modes() {
 
   function handleModeClick(modeId: string) {
     if (activeMode === modeId) {
-      stopAudio();
+      if (modeId !== "spotify") stopAudio();
       setActiveMode(null);
     } else {
+      stopAudio();
       setActiveMode(modeId);
-      playMode(modeId);
+      if (modeId !== "spotify") playMode(modeId);
     }
   }
 
@@ -85,7 +132,7 @@ export function Floor2Modes() {
       <div className="flex flex-col items-center gap-10 sm:gap-16">
         <div className="flex flex-col items-center gap-6 text-center">
           <p className="text-sm/7 font-semibold text-olive-700">
-            5 Sound Modes
+            {modes.length} Sound Modes
           </p>
           <h2 className="font-display text-[2rem]/10 sm:text-5xl/14 text-olive-950 tracking-tight text-pretty">
             Try them. Pick a favorite.
@@ -124,10 +171,24 @@ export function Floor2Modes() {
           )}
         </div>
 
-        <AudioVisualizer
-          active={activeMode !== null}
-          color={active?.color ?? "#1a6b4a"}
-        />
+        {activeMode === "spotify" ? (
+          <div className="flex flex-col items-center gap-3 text-center px-4">
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="#1DB954" className="size-6">
+                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+              </svg>
+              <span className="text-sm font-medium text-olive-700">Requires the Spotify app</span>
+            </div>
+            <p className="text-xs text-olive-500 max-w-sm">
+              This mode controls your Spotify volume instead of playing its own sounds. Have Spotify running with music playing — codevator fades it in when coding starts and out when done. macOS only.
+            </p>
+          </div>
+        ) : (
+          <AudioVisualizer
+            active={activeMode !== null}
+            color={active?.color ?? "#1a6b4a"}
+          />
+        )}
       </div>
     </div>
   );

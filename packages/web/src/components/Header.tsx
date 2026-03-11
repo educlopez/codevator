@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 const NAV_PAGES = [
   { label: "Docs", href: "/docs" },
   { label: "Sounds", href: "/sounds" },
+  { label: "Menubar", href: "/docs#menubar" },
   { label: "Roadmap", href: "/roadmap" },
 ];
 

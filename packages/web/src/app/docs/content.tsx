@@ -47,6 +47,9 @@ const TOC = [
   { id: "commands", label: "Commands" },
   { id: "sounds", label: "Sounds" },
   { id: "custom-sounds", label: "Custom sounds" },
+  { id: "profiles", label: "Profiles" },
+  { id: "multi-agent", label: "Multi-agent" },
+  { id: "menubar", label: "Menubar app" },
   { id: "how-it-works", label: "How it works" },
   { id: "configuration", label: "Configuration" },
   { id: "skill", label: "Claude Code skill" },
@@ -117,6 +120,15 @@ export function DocsContent() {
                   { cmd: "npx codevator on / off", desc: "Enable or disable sounds" },
                   { cmd: "npx codevator volume <n>", desc: "Set volume (0\u2013100)" },
                   { cmd: "npx codevator status", desc: "Show current settings" },
+                  { cmd: "npx codevator list", desc: "Show installed, bundled, and available sounds" },
+                  { cmd: "npx codevator preview <mode>", desc: "Play a 5-second preview of a sound mode" },
+                  { cmd: "npx codevator import <file>", desc: "Import a custom audio file as a sound mode" },
+                  { cmd: "npx codevator remove <name>", desc: "Delete a custom sound (bundled sounds are protected)" },
+                  { cmd: "npx codevator doctor", desc: "Check installation health (hooks, audio, config)" },
+                  { cmd: "npx codevator stats", desc: "Show usage statistics (plays, favorite mode)" },
+                  { cmd: "npx codevator profile <action>", desc: "Manage saved presets (create, use, list, delete)" },
+                  { cmd: "npx codevator install-menubar", desc: "Compile and install the macOS menubar app" },
+                  { cmd: "npx codevator uninstall-menubar", desc: "Remove the menubar app" },
                   { cmd: "npx codevator uninstall", desc: "Remove hooks from Claude Code" },
                 ].map((row) => (
                   <div
@@ -135,7 +147,7 @@ export function DocsContent() {
             {/* Sounds */}
             <Section id="sounds" title="Sounds">
               <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
-                <p>Five built-in sound modes:</p>
+                <p>Built-in sound modes:</p>
                 <div className="grid gap-2">
                   {[
                     { name: "elevator", desc: "Smooth jazz elevator music (default)" },
@@ -143,6 +155,7 @@ export function DocsContent() {
                     { name: "ambient", desc: "Gentle rain and atmospheric background" },
                     { name: "retro", desc: "Mellow 8-bit synthesized arpeggios" },
                     { name: "minimal", desc: "Deep warm hum with slow breathing" },
+                    { name: "spotify", desc: "Controls Spotify volume — fades in/out with your coding session (macOS)" },
                   ].map((mode) => (
                     <div key={mode.name} className="flex items-baseline gap-3 py-1">
                       <code className="text-sm font-mono text-olive-950">{mode.name}</code>
@@ -181,6 +194,95 @@ export function DocsContent() {
                   in <code className="font-mono text-olive-950">~/.codevator/sounds/</code> and use its filename as the mode:
                 </p>
                 <CodeBlock copyText="cp my-music.mp3 ~/.codevator/sounds/chill.mp3">{`cp my-music.mp3 ~/.codevator/sounds/chill.mp3\nnpx codevator mode chill`}</CodeBlock>
+              </div>
+            </Section>
+
+            {/* Profiles */}
+            <Section id="profiles" title="Profiles">
+              <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
+                <p>
+                  Profiles let you save named presets for different contexts — a calm setup for deep
+                  work, a louder one for background tasks.
+                </p>
+                <p>Create a profile:</p>
+                <CodeBlock copyText="npx codevator profile create work --mode ambient --volume 50">npx codevator profile create work --mode ambient --volume 50</CodeBlock>
+                <p>Switch to a saved profile:</p>
+                <CodeBlock copyText="npx codevator profile use work">npx codevator profile use work</CodeBlock>
+                <p>List all profiles:</p>
+                <CodeBlock copyText="npx codevator profile list">npx codevator profile list</CodeBlock>
+                <p>Delete a profile:</p>
+                <CodeBlock copyText="npx codevator profile delete work">npx codevator profile delete work</CodeBlock>
+                <p>
+                  Each profile stores a <code className="font-mono text-olive-950">mode</code> and <code className="font-mono text-olive-950">volume</code>.
+                  When you switch profiles, both are applied immediately. Profiles are saved
+                  in <code className="font-mono text-olive-950">~/.codevator/config.json</code> under
+                  the <code className="font-mono text-olive-950">profiles</code> key.
+                </p>
+              </div>
+            </Section>
+
+            {/* Multi-agent */}
+            <Section id="multi-agent" title="Multi-agent">
+              <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
+                <p>
+                  Codevator works with multiple coding agents. During setup, choose which agent
+                  to configure hooks for:
+                </p>
+                <CodeBlock copyText="npx codevator setup --agent claude">npx codevator setup --agent claude</CodeBlock>
+                <p>Supported agents:</p>
+                <div className="grid gap-2">
+                  {[
+                    { name: "claude", desc: "Claude Code (default) — hooks in ~/.claude/settings.json" },
+                    { name: "codex", desc: "Codex — hooks in ~/.codex/config.toml" },
+                    { name: "opencode", desc: "OpenCode — plugin in ~/.config/opencode/plugins/" },
+                  ].map((agent) => (
+                    <div key={agent.name} className="flex items-baseline gap-3 py-1">
+                      <code className="text-sm font-mono text-olive-950">{agent.name}</code>
+                      <span className="text-sm text-olive-500">{agent.desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <p>
+                  All agents share the same config, sounds, and profiles. The only difference is
+                  where the hooks are installed. You can set up multiple agents on the same machine.
+                </p>
+              </div>
+            </Section>
+
+            {/* Menubar app */}
+            <Section id="menubar" title="Menubar app">
+              <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
+                <p>
+                  A native macOS menu bar companion app that gives you visual controls without
+                  leaving your editor. Toggle playback, switch modes, and adjust volume from the
+                  system tray.
+                </p>
+                <p>Install it with one command:</p>
+                <CodeBlock copyText="npx codevator install-menubar">npx codevator install-menubar</CodeBlock>
+                <p>
+                  This compiles a Swift binary and installs it
+                  at <code className="font-mono text-olive-950">~/.codevator/menubar/</code>.
+                  Xcode Command Line Tools are required for compilation.
+                </p>
+                <p>Features:</p>
+                <ul className="list-disc list-inside space-y-1 text-olive-600">
+                  <li>Playback toggle — enable or disable sounds with a switch</li>
+                  <li>Sound mode picker — visual grid of all available modes</li>
+                  <li>Volume slider — 0-100% control</li>
+                  <li>Status indicator — LIVE/IDLE badge with animated equalizer</li>
+                  <li>Daemon status — shows if the audio daemon is active</li>
+                </ul>
+                <p>
+                  The menubar app auto-launches when a coding session starts and reads
+                  the same config as the CLI. Changes made in the menubar are reflected
+                  in the CLI and vice versa.
+                </p>
+                <p>
+                  <strong className="text-olive-950">macOS only.</strong> Requires macOS and Xcode
+                  Command Line Tools. Linux and Windows users should use the CLI.
+                </p>
+                <p>To remove it:</p>
+                <CodeBlock copyText="npx codevator uninstall-menubar">npx codevator uninstall-menubar</CodeBlock>
               </div>
             </Section>
 
