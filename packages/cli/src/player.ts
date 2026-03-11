@@ -926,6 +926,14 @@ export async function play(): Promise<void> {
     // Register this session's heartbeat (multi-session support)
     registerSession();
 
+    // Launch menu bar app if installed but not running (macOS only)
+    if (process.platform === "darwin") {
+      try {
+        const { launchMenubar } = await import("./menubar.js");
+        launchMenubar();
+      } catch { /* non-critical */ }
+    }
+
     // Track play stats
     try { recordPlay(config.mode); } catch { /* stats are non-critical */ }
 

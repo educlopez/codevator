@@ -7,6 +7,7 @@ import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedMani
 import { setupHooks, removeHooks } from "./setup.js";
 import { getAdapter, listAdapters } from "./agents/index.js";
 import { getStats } from "./stats.js";
+import { installMenubar, uninstallMenubar } from "./menubar.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
 const VALID_COMMANDS = [
@@ -14,6 +15,7 @@ const VALID_COMMANDS = [
   "play", "stop", "session-end", "uninstall", "help",
   "doctor", "list", "preview", "stats",
   "import", "remove", "profile",
+  "install-menubar", "uninstall-menubar",
 ] as const;
 
 type Command = (typeof VALID_COMMANDS)[number];
@@ -67,6 +69,10 @@ export async function run(command: Command, args: string[]): Promise<void> {
       return runRemove(args[0]);
     case "profile":
       return runProfile(args);
+    case "install-menubar":
+      return runInstallMenubar();
+    case "uninstall-menubar":
+      return runUninstallMenubar();
     case "help":
       return runHelp();
   }
@@ -621,6 +627,39 @@ function runProfileDelete(name: string | undefined): void {
   success(`Deleted profile "${pc.cyan(name)}"`);
 }
 
+async function runInstallMenubar(): Promise<void> {
+  if (process.platform !== "darwin") {
+    warn("Menu bar app is only available on macOS.");
+    return;
+  }
+
+  intro();
+  const s = p.spinner();
+  s.start("Building menu bar app (this may take a minute)");
+
+  const result = await installMenubar();
+
+  if (result.success) {
+    s.stop("Menu bar app installed");
+    success(result.message);
+    p.log.step(pc.dim("The app will launch automatically when you start a coding session."));
+    p.log.step(pc.dim(`To remove it: ${pc.cyan("npx codevator uninstall-menubar")}`));
+  } else {
+    s.stop("Installation failed");
+    warn(result.message);
+  }
+}
+
+function runUninstallMenubar(): void {
+  intro();
+  const result = uninstallMenubar();
+  if (result.success) {
+    success(result.message);
+  } else {
+    warn(result.message);
+  }
+}
+
 function runHelp(): void {
   intro();
   p.note(
@@ -642,6 +681,8 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator import")} <file> Import a custom sound file`,
       `  ${pc.cyan("npx codevator remove")} <name> Remove a custom sound`,
       `  ${pc.cyan("npx codevator profile")} ...   Manage sound profiles`,
+      `  ${pc.cyan("npx codevator install-menubar")}  Install macOS menu bar app`,
+      `  ${pc.cyan("npx codevator uninstall-menubar")} Remove menu bar app`,
       `  ${pc.cyan("npx codevator uninstall")}    Remove hooks`,
       "",
       `  ${pc.dim(`Agents: ${listAdapters().join(", ")}`)}`,
