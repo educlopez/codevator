@@ -1,6 +1,6 @@
 {
   "name": "codevator",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "type": "module",
   "description": "Elevator music for your AI coding agent",
   "bin": {

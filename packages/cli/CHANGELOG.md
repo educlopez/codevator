@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.10.0](https://github.com/educlopez/codevator/compare/v0.9.1...v0.10.0) (2026-03-11)
+
+
+### Bug Fixes
+
+* **cli:** add getConfigDir mock to commands-runtime tests ([729ffde](https://github.com/educlopez/codevator/commit/729ffde2e67f782e3a292c4744f8fd92cde053ad))
+* **menubar:** address CodeRabbit review feedback ([ea700a4](https://github.com/educlopez/codevator/commit/ea700a441f7f58934512c494d77371d21cfedad2)), closes [#if](https://github.com/educlopez/codevator/issues/if)
+* **menubar:** native macOS UI, direct daemon protocol, and config sync ([370159d](https://github.com/educlopez/codevator/commit/370159d8b130e3b8916887e55c4a2436feea137a))
+
+
+### Features
+
+* **cli:** add install-menubar and uninstall-menubar commands ([a2536ab](https://github.com/educlopez/codevator/commit/a2536abbd4910212b6fd7864e9808f41f5a47e41))
+* **menubar:** add SwiftUI macOS menu bar app ([e5d6374](https://github.com/educlopez/codevator/commit/e5d6374fec6909bf1f8d5699e7cae028e943c4fc))
+* **web:** add 3D retro Macintosh Classic hero with CRT terminal ([cbe8888](https://github.com/educlopez/codevator/commit/cbe8888ee470e159edcfa9be0c75f3380d64054f))
+
 ## [0.9.1](https://github.com/educlopez/codevator/compare/v0.9.0...v0.9.1) (2026-03-07)
 
 # [0.9.0](https://github.com/educlopez/codevator/compare/v0.8.0...v0.9.0) (2026-03-07)
