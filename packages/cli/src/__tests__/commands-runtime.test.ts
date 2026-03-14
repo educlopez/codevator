@@ -36,9 +36,13 @@ vi.mock("../ui.js", () => ({
   volumeBar: vi.fn(() => "████████░░"),
 }));
 
-vi.mock("../stats.js", () => ({
-  getStats: vi.fn(),
-}));
+vi.mock("../stats.js", async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    getStats: vi.fn(),
+  };
+});
 
 vi.mock("../config.js", () => ({
   getConfig: vi.fn(),
@@ -89,10 +93,10 @@ vi.mock("../agents/index.js", () => ({
 
 // --- Imports (after mocks) ---
 
-import { runStatsCommand, runList, runPreview, run } from "../commands.js";
+import { runStatsCommand, runList, runPreview, runDoctorCommand, run } from "../commands.js";
 import { getStats } from "../stats.js";
 import { getConfig, isValidMode } from "../config.js";
-import { getSoundFiles, detectPlayer } from "../player.js";
+import { getSoundFiles, detectPlayer, isPlaying } from "../player.js";
 import { listInstalled, getCachedManifest } from "../registry.js";
 import { intro, outro, warn, success, p } from "../ui.js";
 import { importSound } from "../import.js";
@@ -106,6 +110,7 @@ const mockGetSoundFiles = vi.mocked(getSoundFiles);
 const mockDetectPlayer = vi.mocked(detectPlayer);
 const mockListInstalled = vi.mocked(listInstalled);
 const mockGetCachedManifest = vi.mocked(getCachedManifest);
+const mockIsPlaying = vi.mocked(isPlaying);
 const mockIntro = vi.mocked(intro);
 const mockOutro = vi.mocked(outro);
 const mockWarn = vi.mocked(warn);
@@ -133,6 +138,9 @@ describe("runStatsCommand", () => {
       totalPlays: 42,
       lastPlayed: "2026-03-01T10:00:00.000Z",
       modeUsage: { elevator: 30, ambient: 12 },
+      totalPlayTimeMs: 45240000,
+      activeDays: ["2026-03-01"],
+      lastSessionStartMs: null,
     });
 
     runStatsCommand();
@@ -153,6 +161,9 @@ describe("runStatsCommand", () => {
       totalPlays: 0,
       lastPlayed: null,
       modeUsage: {},
+      totalPlayTimeMs: 0,
+      activeDays: [],
+      lastSessionStartMs: null,
     });
 
     runStatsCommand();
@@ -486,5 +497,195 @@ describe("runImport interactive duplicate prompt", () => {
 
     expect(mockPConfirm).not.toHaveBeenCalled();
     expect(mockWarn).toHaveBeenCalledWith("File not found: /bad/path.mp3");
+  });
+});
+
+// ============================================================
+// runStatsCommand — engagement features
+// ============================================================
+
+describe("runStatsCommand engagement features", () => {
+  it("displays play time, streaks, and milestone for rich data", () => {
+    mockGetStats.mockReturnValue({
+      totalSessions: 47,
+      totalPlays: 150,
+      lastPlayed: "2026-03-14T10:00:00.000Z",
+      modeUsage: { elevator: 100, ambient: 50 },
+      totalPlayTimeMs: 45240000,
+      activeDays: ["2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14"],
+      lastSessionStartMs: null,
+    });
+
+    runStatsCommand();
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    // Play time
+    expect(noteContent).toContain("12h 34m");
+    // Streaks — we can't predict exact values without pinning time, but at least lines exist
+    expect(noteContent).toContain("Current streak");
+    expect(noteContent).toContain("Longest streak");
+    // Favorite mode
+    expect(noteContent).toContain("elevator");
+    expect(noteContent).toContain("100 plays");
+    // Milestone for 150 plays -> highest is 100
+    expect(noteContent).toContain("100 plays!");
+    // GitHub nudge for milestone >= 50
+    expect(noteContent).toContain("github.com/educlopez/codevator");
+  });
+
+  it("displays '0m' and '0 days' for zero stats", () => {
+    mockGetStats.mockReturnValue({
+      totalSessions: 0,
+      totalPlays: 0,
+      lastPlayed: null,
+      modeUsage: {},
+      totalPlayTimeMs: 0,
+      activeDays: [],
+      lastSessionStartMs: null,
+    });
+
+    runStatsCommand();
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    expect(noteContent).toContain("0m");
+    expect(noteContent).toContain("0 days");
+  });
+
+  it("uses singular 'day' for streak of 1", () => {
+    mockGetStats.mockReturnValue({
+      totalSessions: 1,
+      totalPlays: 5,
+      lastPlayed: "2026-03-14T10:00:00.000Z",
+      modeUsage: { elevator: 5 },
+      totalPlayTimeMs: 60000,
+      activeDays: [new Date().toISOString().slice(0, 10)],
+      lastSessionStartMs: null,
+    });
+
+    runStatsCommand();
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    expect(noteContent).toMatch(/1 day\b/);
+  });
+
+  it("shows celebration for exactly 10 plays without GitHub nudge", () => {
+    mockGetStats.mockReturnValue({
+      totalSessions: 5,
+      totalPlays: 10,
+      lastPlayed: "2026-03-14T10:00:00.000Z",
+      modeUsage: { elevator: 10 },
+      totalPlayTimeMs: 600000,
+      activeDays: [],
+      lastSessionStartMs: null,
+    });
+
+    runStatsCommand();
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    expect(noteContent).toContain("10 plays!");
+    // Should NOT contain GitHub link for milestone < 50
+    expect(noteContent).not.toContain("github.com");
+  });
+
+  it("shows no milestone celebration between thresholds (e.g. totalPlays=75 shows milestone 50)", () => {
+    mockGetStats.mockReturnValue({
+      totalSessions: 30,
+      totalPlays: 75,
+      lastPlayed: "2026-03-14T10:00:00.000Z",
+      modeUsage: { elevator: 75 },
+      totalPlayTimeMs: 3600000,
+      activeDays: [],
+      lastSessionStartMs: null,
+    });
+
+    runStatsCommand();
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    // 75 >= 50, so milestone 50 is shown with GitHub nudge
+    expect(noteContent).toContain("50 plays!");
+    expect(noteContent).toContain("github.com/educlopez/codevator");
+  });
+});
+
+// ============================================================
+// runStatus — engagement features
+// ============================================================
+
+describe("runStatus engagement features", () => {
+  it("includes mini-stats line and GitHub URL", async () => {
+    mockGetConfig.mockReturnValue({ mode: "elevator", volume: 70, enabled: true });
+    mockIsPlaying.mockReturnValue(false);
+    mockGetStats.mockReturnValue({
+      totalSessions: 47,
+      totalPlays: 150,
+      lastPlayed: "2026-03-14T10:00:00.000Z",
+      modeUsage: { elevator: 100, ambient: 50 },
+      totalPlayTimeMs: 45240000,
+      activeDays: [],
+      lastSessionStartMs: null,
+    });
+
+    await run("status", []);
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    expect(noteContent).toContain("12h 34m");
+    expect(noteContent).toContain("47");
+    expect(noteContent).toContain("sessions");
+    expect(noteContent).toContain("github.com/educlopez/codevator");
+  });
+
+  it("shows '0m' and '0 sessions' for no play history", async () => {
+    mockGetConfig.mockReturnValue({ mode: "elevator", volume: 70, enabled: true });
+    mockIsPlaying.mockReturnValue(false);
+    mockGetStats.mockReturnValue({
+      totalSessions: 0,
+      totalPlays: 0,
+      lastPlayed: null,
+      modeUsage: {},
+      totalPlayTimeMs: 0,
+      activeDays: [],
+      lastSessionStartMs: null,
+    });
+
+    await run("status", []);
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    expect(noteContent).toContain("0m");
+    expect(noteContent).toContain("0");
+  });
+});
+
+// ============================================================
+// runHelp — GitHub links
+// ============================================================
+
+describe("runHelp engagement features", () => {
+  it("includes GitHub repo URL and issues URL", async () => {
+    await run("help", []);
+
+    const noteContent = mockPNote.mock.calls[0][0] as string;
+    expect(noteContent).toContain("https://github.com/educlopez/codevator");
+    expect(noteContent).toContain("https://github.com/educlopez/codevator/issues");
+  });
+});
+
+// ============================================================
+// runSetup — tip lines
+// ============================================================
+
+describe("runSetup engagement features", () => {
+  it("displays tip lines after setup", async () => {
+    mockGetConfig.mockReturnValue({ mode: "elevator", volume: 70, enabled: true });
+    mockGetSoundFiles.mockReturnValue(["/path/elevator.mp3"]);
+
+    await run("setup", []);
+
+    // Find tip lines among all p.log.step calls
+    const stepCalls = mockPLogStep.mock.calls.map((c) => c[0] as string);
+    const tipCalls = stepCalls.filter((s) => s.includes("Tip:"));
+    expect(tipCalls.length).toBeGreaterThanOrEqual(2);
+    // At least one references 'mode' and one references 'stats'
+    expect(tipCalls.some((t) => t.includes("mode"))).toBe(true);
+    expect(tipCalls.some((t) => t.includes("stats"))).toBe(true);
   });
 });

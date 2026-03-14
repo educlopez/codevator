@@ -6,7 +6,9 @@ import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, getSoundFile
 import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedManifest, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { getAdapter, listAdapters } from "./agents/index.js";
-import { getStats } from "./stats.js";
+import { getStats, formatDuration, computeStreaks, checkMilestone } from "./stats.js";
+
+const GITHUB_URL = "https://github.com/educlopez/codevator";
 import { installMenubar, uninstallMenubar } from "./menubar.js";
 import { intro, outro, success, warn, p, pc, volumeBar } from "./ui.js";
 
@@ -124,6 +126,11 @@ async function runSetup(args: string[] = []): Promise<void> {
       `${pc.cyan("npx codevator uninstall")}    Remove hooks`,
     ].join("\n")
   );
+
+  p.log.step(`Tip: Run ${pc.cyan("npx codevator mode")} to explore sound modes`);
+  p.log.step(`Tip: Run ${pc.cyan("npx codevator stats")} to see your listening history`);
+  p.log.step(`Tip: Run ${pc.cyan("npx codevator add")} to download community sounds`);
+
   outro("Installed! Default mode: elevator");
 }
 
@@ -266,6 +273,7 @@ function runStatus(): void {
   const config = getConfig();
   const playing = isPlaying();
   const agent = config.agent ?? "claude";
+  const stats = getStats();
   intro();
   p.note(
     [
@@ -274,6 +282,10 @@ function runStatus(): void {
       `Volume   ${volumeBar(config.volume)} ${config.volume}%`,
       `Enabled  ${config.enabled ? pc.green("yes") : pc.red("no")}`,
       `Playing  ${playing ? pc.green("yes") : pc.dim("no")}`,
+      "",
+      `Played ${pc.cyan(formatDuration(stats.totalPlayTimeMs))} across ${pc.cyan(String(stats.totalSessions))} sessions`,
+      "",
+      pc.dim(GITHUB_URL),
     ].join("\n"),
     "Status"
   );
@@ -439,12 +451,27 @@ export function runStatsCommand(): void {
   const favoriteMode = Object.entries(stats.modeUsage)
     .sort(([, a], [, b]) => b - a)[0];
 
+  const streaks = computeStreaks(stats.activeDays);
+  const dayLabel = (n: number) => n === 1 ? "day" : "days";
+
   const lines = [
     `Total plays      ${pc.cyan(String(stats.totalPlays))}`,
     `Total sessions   ${pc.cyan(String(stats.totalSessions))}`,
-    `Favorite mode    ${favoriteMode ? pc.cyan(favoriteMode[0]) : pc.dim("none yet")}`,
+    `Total play time  ${pc.cyan(formatDuration(stats.totalPlayTimeMs))}`,
+    `Favorite mode    ${favoriteMode ? `${pc.cyan(favoriteMode[0])} (${favoriteMode[1]} plays)` : pc.dim("none yet")}`,
+    `Current streak   ${pc.cyan(String(streaks.current))} ${dayLabel(streaks.current)}`,
+    `Longest streak   ${pc.cyan(String(streaks.longest))} ${dayLabel(streaks.longest)}`,
     `Last played      ${stats.lastPlayed ? pc.cyan(stats.lastPlayed) : pc.dim("never")}`,
   ];
+
+  const milestone = checkMilestone(stats.totalPlays);
+  if (milestone !== null) {
+    if (milestone >= 50) {
+      lines.push("", `🎉 ${milestone} plays! If you're enjoying codevator, a ⭐ on GitHub helps a lot: ${GITHUB_URL}`);
+    } else {
+      lines.push("", `🎉 ${milestone} plays! You're getting into the groove.`);
+    }
+  }
 
   p.note(lines.join("\n"), "Stats");
   p.outro("");
@@ -688,6 +715,9 @@ function runHelp(): void {
       `  ${pc.dim(`Agents: ${listAdapters().join(", ")}`)}`,
       `  ${pc.dim(`Modes: ${MODES.join(", ")}`)}`,
       `  ${pc.dim("spotify mode controls your Spotify volume (macOS only)")}`,
+      "",
+      `  ${pc.dim(`GitHub: ${GITHUB_URL}`)}`,
+      `  ${pc.dim(`Issues: ${GITHUB_URL}/issues`)}`,
     ].join("\n"),
     "Elevator music for your AI coding agent"
   );

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getConfig, getConfigDir } from "./config.js";
-import { recordPlay } from "./stats.js";
+import { recordPlay, recordSessionEnd } from "./stats.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1004,6 +1004,7 @@ export function stop(): void {
 
 /** Called from SessionEnd hook when a Claude session truly exits. */
 export function sessionEnd(): void {
+  try { recordSessionEnd(); } catch { /* stats are non-critical */ }
   unregisterSession();
 
   if (process.platform === "darwin" && isDaemonRunning()) {
