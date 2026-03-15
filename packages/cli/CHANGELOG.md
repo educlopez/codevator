@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.11.0](https://github.com/educlopez/codevator/compare/v0.10.1...v0.11.0) (2026-03-15)
+
+
+### Features
+
+* **cli:** add category-based sound gallery with random mode and grouped UX ([50b0586](https://github.com/educlopez/codevator/commit/50b0586cce5f616f73a1a3f40c8b2fbcda7ab6ea))
+* **cli:** add Gemini CLI, Copilot CLI, Cursor, and Windsurf adapters ([69a1bcd](https://github.com/educlopez/codevator/commit/69a1bcdd2d75ea098a69ec4638e514d3784b854f))
+* **cli:** add user engagement features with duration tracking, streaks, and feedback links ([80b9db0](https://github.com/educlopez/codevator/commit/80b9db0581e7f9658459a03a2a2b8efc01a89428))
+* **web:** add 9 new sounds across 3 categories with Pixabay attribution ([9eb89e4](https://github.com/educlopez/codevator/commit/9eb89e44f7632610ab7c6486cd63128012aca024))
+* **web:** update website to reflect CLI v0.10.x features ([c3190ea](https://github.com/educlopez/codevator/commit/c3190ea541ba7d7346d132b0ce339e73a6095e57))
+
 ## [0.10.1](https://github.com/educlopez/codevator/compare/v0.10.0...v0.10.1) (2026-03-11)
 
 
