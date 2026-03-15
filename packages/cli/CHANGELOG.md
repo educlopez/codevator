@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.12.0](https://github.com/educlopez/codevator/compare/v0.11.0...v0.12.0) (2026-03-15)
+
+
+### Features
+
+* **web:** update website and docs for v0.11.0 features ([2a2a1df](https://github.com/educlopez/codevator/commit/2a2a1df919f78ec3136cc5047842ea21d5943f00))
+
 # [0.11.0](https://github.com/educlopez/codevator/compare/v0.10.1...v0.11.0) (2026-03-15)
 
 
