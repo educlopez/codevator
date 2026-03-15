@@ -27,6 +27,74 @@ export interface SoundEntry {
   description: string;
   category: string;
   color: string;
+  tags?: string[];
+}
+
+// Display order for categories in pickers and list output
+export const CATEGORY_ORDER = ["focus", "nature", "music", "mechanical", "atmosphere", "integration"] as const;
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  focus: "Focus & Ambient",
+  nature: "Nature",
+  music: "Music & Retro",
+  mechanical: "Mechanical",
+  atmosphere: "Atmosphere",
+  integration: "Integrations",
+};
+
+/**
+ * Groups sounds by category, respecting CATEGORY_ORDER.
+ * Unknown categories go into an "Other" bucket at the end.
+ */
+export function groupByCategory(sounds: SoundEntry[]): Map<string, SoundEntry[]> {
+  const grouped = new Map<string, SoundEntry[]>();
+  const knownCategories = new Set<string>(CATEGORY_ORDER);
+
+  // Initialize known categories in order (only if they have entries)
+  const tempMap = new Map<string, SoundEntry[]>();
+  for (const sound of sounds) {
+    const cat = sound.category;
+    if (!tempMap.has(cat)) tempMap.set(cat, []);
+    tempMap.get(cat)!.push(sound);
+  }
+
+  // Add in CATEGORY_ORDER first
+  for (const cat of CATEGORY_ORDER) {
+    const entries = tempMap.get(cat);
+    if (entries && entries.length > 0) {
+      grouped.set(cat, entries);
+    }
+  }
+
+  // Add unknown categories as "Other"
+  const otherEntries: SoundEntry[] = [];
+  for (const [cat, entries] of tempMap) {
+    if (!knownCategories.has(cat)) {
+      otherEntries.push(...entries);
+    }
+  }
+  if (otherEntries.length > 0) {
+    grouped.set("other", otherEntries);
+  }
+
+  return grouped;
+}
+
+/**
+ * Pick a random sound from the list, excluding `exclude` name if possible.
+ */
+export function pickRandom(sounds: SoundEntry[], exclude?: string): SoundEntry {
+  if (sounds.length === 0) throw new Error("No sounds available for random selection");
+  if (sounds.length === 1) return sounds[0];
+
+  const candidates = exclude
+    ? sounds.filter((s) => s.name !== exclude)
+    : sounds;
+
+  // If filtering removed all candidates (unlikely but safe), use full list
+  const pool = candidates.length > 0 ? candidates : sounds;
+  const idx = Math.floor(Math.random() * pool.length);
+  return pool[idx];
 }
 
 interface SoundManifest {

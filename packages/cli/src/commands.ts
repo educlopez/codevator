@@ -3,7 +3,7 @@ import { isValidMode } from "./config.js";
 import { runDoctor } from "./doctor.js";
 import { importSound, removeSound } from "./import.js";
 import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, getSoundFiles, isSpotifyRunning, detectPlayer } from "./player.js";
-import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedManifest, type SoundEntry } from "./registry.js";
+import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedManifest, groupByCategory, pickRandom, CATEGORY_ORDER, CATEGORY_LABELS, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { getAdapter, listAdapters } from "./agents/index.js";
 import { getStats, formatDuration, computeStreaks, checkMilestone } from "./stats.js";
@@ -33,14 +33,24 @@ export function parseArgs(argv: string[]): { command: Command; args: string[] } 
   return { command: cmd as Command, args };
 }
 
+function hasFlag(args: string[], flag: string): boolean {
+  return args.includes(flag);
+}
+
+function getFlagValue(args: string[], flag: string): string | undefined {
+  const idx = args.indexOf(flag);
+  if (idx === -1 || idx + 1 >= args.length) return undefined;
+  return args[idx + 1];
+}
+
 export async function run(command: Command, args: string[]): Promise<void> {
   switch (command) {
     case "setup":
       return runSetup(args);
     case "mode":
-      return runMode(args[0]);
+      return runMode(args[0]?.startsWith("--") ? undefined : args[0], args);
     case "add":
-      return runAdd(args[0]);
+      return runAdd(args[0]?.startsWith("--") ? undefined : args[0], args);
     case "on":
       return runOn();
     case "off":
@@ -60,7 +70,7 @@ export async function run(command: Command, args: string[]): Promise<void> {
     case "doctor":
       return runDoctorCommand();
     case "list":
-      return runList();
+      return runList(args);
     case "preview":
       return runPreview(args[0]);
     case "stats":
@@ -134,31 +144,140 @@ async function runSetup(args: string[] = []): Promise<void> {
   outro("Installed! Default mode: elevator");
 }
 
-async function runMode(mode: string | undefined): Promise<void> {
+async function runMode(mode: string | undefined, args: string[] = []): Promise<void> {
+  const isRandom = hasFlag(args, "--random");
+  const categoryFilter = getFlagValue(args, "--category");
+
+  // Handle --random with explicit mode name (error)
+  if (isRandom && mode) {
+    warn(`Cannot use --random with an explicit mode name. Using "${mode}" directly.`);
+    // Fall through to direct mode set (explicit name takes precedence)
+  }
+
+  // Handle --random mode
+  if (isRandom && !mode) {
+    const manifest = getCachedManifest();
+    const installed = listInstalled();
+    const allModes = [...new Set([...MODES.filter(m => m !== "spotify"), ...installed])];
+
+    if (allModes.length === 0) {
+      warn("No sounds available for random selection. Run " + pc.cyan("npx codevator add") + " to download sounds.");
+      return;
+    }
+
+    // Build SoundEntry-like objects for built-in modes that aren't in manifest
+    let candidates: SoundEntry[] = allModes.map((name) => {
+      const entry = manifest?.sounds.find((s) => s.name === name);
+      return entry ?? { name, description: "", category: "focus", color: "#999" };
+    });
+
+    // Filter by category if specified
+    if (categoryFilter) {
+      candidates = candidates.filter((s) => s.category === categoryFilter);
+      if (candidates.length === 0) {
+        warn(`No installed sounds in category "${categoryFilter}". Available categories: ${CATEGORY_ORDER.filter(c => c !== "integration").join(", ")}`);
+        return;
+      }
+    }
+
+    const config = getConfig();
+    const picked = pickRandom(candidates, config.lastRandom);
+    setConfig({ mode: picked.name, lastRandom: picked.name });
+    await play();
+    outro(`Random mode: ${pc.cyan(picked.name)}`);
+    return;
+  }
+
   if (!mode) {
     intro();
 
     // Build options from installed sounds + built-in modes
     const installed = listInstalled();
     const allModes = [...new Set([...MODES, ...installed])];
+    const manifest = getCachedManifest();
 
-    const selected = await p.select({
-      message: "Select a sound mode",
-      options: allModes.map((m) => ({
-        value: m,
-        label: m,
-        hint: m === "spotify"
+    // Decide: two-step category picker or flat list
+    if (allModes.length > 8 && manifest) {
+      // Build SoundEntry list for all available modes
+      const soundEntries: SoundEntry[] = allModes.map((name) => {
+        const entry = manifest.sounds.find((s) => s.name === name);
+        return entry ?? { name, description: "", category: "focus", color: "#999" };
+      });
+
+      const grouped = groupByCategory(soundEntries);
+
+      // Step 1: Select category
+      const categoryOptions = [...grouped.entries()].map(([cat, entries]) => ({
+        value: cat,
+        label: CATEGORY_LABELS[cat] ?? cat,
+        hint: `${entries.length} sound${entries.length !== 1 ? "s" : ""}`,
+      }));
+
+      const selectedCategory = await p.select({
+        message: "Select a category",
+        options: categoryOptions,
+      });
+
+      if (p.isCancel(selectedCategory)) {
+        p.cancel("Cancelled.");
+        return;
+      }
+
+      // Step 2: Select sound within category
+      const soundsInCategory = grouped.get(selectedCategory) ?? [];
+      const soundOptions = soundsInCategory.map((s) => ({
+        value: s.name,
+        label: s.name,
+        hint: s.name === "spotify"
           ? "controls Spotify volume"
-          : (MODES as readonly string[]).includes(m) ? "built-in" : "downloaded",
-      })),
-    });
+          : isInstalled(s.name)
+            ? "installed"
+            : (MODES as readonly string[]).includes(s.name)
+              ? "built-in"
+              : "not installed",
+      }));
 
-    if (p.isCancel(selected)) {
-      p.cancel("Cancelled.");
-      return;
+      const selectedSound = await p.select({
+        message: `Select a sound from ${CATEGORY_LABELS[selectedCategory] ?? selectedCategory}`,
+        options: soundOptions,
+      });
+
+      if (p.isCancel(selectedSound)) {
+        p.cancel("Cancelled.");
+        return;
+      }
+
+      mode = selectedSound;
+
+      // Warn if not installed
+      if (!isValidMode(mode)) {
+        warn(`Sound '${mode}' is not installed. Run ${pc.cyan(`npx codevator add ${mode}`)} to download it first.`);
+        return;
+      }
+    } else {
+      // Flat list fallback (<=8 sounds or no manifest)
+      const selected = await p.select({
+        message: "Select a sound mode",
+        options: allModes.map((m) => {
+          const entry = manifest?.sounds.find((s) => s.name === m);
+          const categoryHint = entry ? ` [${CATEGORY_LABELS[entry.category] ?? entry.category}]` : "";
+          return {
+            value: m,
+            label: m,
+            hint: m === "spotify"
+              ? "controls Spotify volume"
+              : ((MODES as readonly string[]).includes(m) ? "built-in" : "downloaded") + categoryHint,
+          };
+        }),
+      });
+
+      if (p.isCancel(selected)) {
+        p.cancel("Cancelled.");
+        return;
+      }
+
+      mode = selected;
     }
-
-    mode = selected;
   }
 
   if (!isValidMode(mode)) {
@@ -178,7 +297,7 @@ async function runMode(mode: string | undefined): Promise<void> {
   outro(`Mode set to: ${pc.cyan(mode)}`);
 }
 
-async function runAdd(name: string | undefined): Promise<void> {
+async function runAdd(name: string | undefined, args: string[] = []): Promise<void> {
   intro();
   const s = p.spinner();
   s.start("Fetching sound registry");
@@ -193,14 +312,51 @@ async function runAdd(name: string | undefined): Promise<void> {
   s.stop("Registry loaded");
 
   if (!name) {
-    // Interactive selection
+    const categoryFilter = getFlagValue(args, "--category");
+
+    let soundsToShow = manifest.sounds.filter((s: SoundEntry) => s.category !== "integration");
+
+    // Filter by category if specified
+    if (categoryFilter) {
+      const validCategories = CATEGORY_ORDER.filter(c => c !== "integration");
+      if (!validCategories.includes(categoryFilter as typeof validCategories[number])) {
+        warn(`Unknown category "${categoryFilter}". Available categories: ${validCategories.join(", ")}`);
+        return;
+      }
+      soundsToShow = soundsToShow.filter((s: SoundEntry) => s.category === categoryFilter);
+    }
+
+    const grouped = groupByCategory(soundsToShow);
+
+    // Build flat options grouped by category headers
+    const options: { value: string; label: string; hint?: string }[] = [];
+    for (const [cat, entries] of grouped) {
+      // Add category separator as a disabled-looking label
+      options.push({ value: `__cat_${cat}`, label: `── ${CATEGORY_LABELS[cat] ?? cat} ──`, hint: "" });
+      for (const entry of entries) {
+        options.push({
+          value: entry.name,
+          label: `  ${entry.name}`,
+          hint: isInstalled(entry.name) ? "installed" : entry.description,
+        });
+      }
+    }
+
+    // Filter out category separators from being selectable by using a simple select
+    // Since @clack/prompts doesn't support disabled options, we just use the flat list
+    const flatOptions = soundsToShow.map((entry: SoundEntry) => ({
+      value: entry.name,
+      label: entry.name,
+      hint: isInstalled(entry.name)
+        ? `installed [${CATEGORY_LABELS[entry.category] ?? entry.category}]`
+        : `${entry.description} [${CATEGORY_LABELS[entry.category] ?? entry.category}]`,
+    }));
+
     const selected = await p.select({
-      message: "Select a sound to download",
-      options: manifest.sounds.map((s: SoundEntry) => ({
-        value: s.name,
-        label: s.name,
-        hint: isInstalled(s.name) ? "installed" : undefined,
-      })),
+      message: categoryFilter
+        ? `Select a sound to download (${CATEGORY_LABELS[categoryFilter] ?? categoryFilter})`
+        : "Select a sound to download",
+      options: flatOptions,
     });
 
     if (p.isCancel(selected)) {
@@ -350,43 +506,143 @@ export async function runDoctorCommand(): Promise<void> {
   }
 }
 
-export async function runList(): Promise<void> {
+export async function runList(args: string[] = []): Promise<void> {
   intro();
 
   const installed = listInstalled();
   const manifest = getCachedManifest();
   const config = getConfig();
+  const categoryFilter = getFlagValue(args, "--category");
 
-  const rows: string[] = [];
-
-  // Show installed sounds
-  for (const name of installed) {
-    const active = name === config.mode ? pc.green(" (active)") : "";
-    const files = getSoundFiles(name);
-    rows.push(`  ${pc.cyan(name)}  ${pc.dim(`${files.length} file(s)`)}  installed${active}`);
-  }
-
-  // Show built-in modes not in installed list
-  for (const mode of MODES) {
-    if (mode === "spotify") continue;
-    if (installed.includes(mode)) continue;
-    const files = getSoundFiles(mode);
-    if (files.length > 0) {
-      const active = mode === config.mode ? pc.green(" (active)") : "";
-      rows.push(`  ${pc.cyan(mode)}  ${pc.dim(`${files.length} file(s)`)}  bundled${active}`);
+  // Validate category filter
+  if (categoryFilter) {
+    const validCategories = [...CATEGORY_ORDER];
+    if (!validCategories.includes(categoryFilter as typeof validCategories[number])) {
+      warn(`Unknown category "${categoryFilter}". Available categories: ${CATEGORY_ORDER.join(", ")}`);
+      return;
     }
   }
 
-  // Spotify mode
-  const spotifyActive = config.mode === "spotify" ? pc.green(" (active)") : "";
-  rows.push(`  ${pc.cyan("spotify")}  ${pc.dim("controls Spotify volume")}  built-in${spotifyActive}`);
+  // Build a unified list of all sounds with status
+  interface SoundRow {
+    name: string;
+    category: string;
+    description: string;
+    status: "installed" | "bundled" | "available";
+    active: boolean;
+    fileCount: number;
+    isSpotify: boolean;
+  }
 
-  // Show available-but-not-installed from manifest
+  const allSounds: SoundRow[] = [];
+  const seen = new Set<string>();
+
+  // Installed sounds
+  for (const name of installed) {
+    seen.add(name);
+    const entry = manifest?.sounds.find((s) => s.name === name);
+    const files = getSoundFiles(name);
+    allSounds.push({
+      name,
+      category: entry?.category ?? "focus",
+      description: entry?.description ?? "",
+      status: "installed",
+      active: name === config.mode,
+      fileCount: files.length,
+      isSpotify: false,
+    });
+  }
+
+  // Built-in modes not in installed list
+  for (const mode of MODES) {
+    if (seen.has(mode)) continue;
+    seen.add(mode);
+    const entry = manifest?.sounds.find((s) => s.name === mode);
+    if (mode === "spotify") {
+      allSounds.push({
+        name: "spotify",
+        category: "integration",
+        description: "controls Spotify volume",
+        status: "bundled",
+        active: config.mode === "spotify",
+        fileCount: 0,
+        isSpotify: true,
+      });
+    } else {
+      const files = getSoundFiles(mode);
+      if (files.length > 0) {
+        allSounds.push({
+          name: mode,
+          category: entry?.category ?? "focus",
+          description: entry?.description ?? "",
+          status: "bundled",
+          active: mode === config.mode,
+          fileCount: files.length,
+          isSpotify: false,
+        });
+      }
+    }
+  }
+
+  // Available from manifest but not installed
   if (manifest) {
     for (const entry of manifest.sounds) {
-      if (installed.includes(entry.name)) continue;
-      if ((MODES as readonly string[]).includes(entry.name)) continue;
-      rows.push(`  ${pc.dim(entry.name)}  ${pc.dim(entry.description)}  ${pc.dim("available")}`);
+      if (seen.has(entry.name)) continue;
+      seen.add(entry.name);
+      allSounds.push({
+        name: entry.name,
+        category: entry.category,
+        description: entry.description,
+        status: "available",
+        active: false,
+        fileCount: 0,
+        isSpotify: false,
+      });
+    }
+  }
+
+  // Filter by category if specified
+  const filtered = categoryFilter
+    ? allSounds.filter((s) => s.category === categoryFilter)
+    : allSounds;
+
+  // Group by category
+  const grouped = new Map<string, SoundRow[]>();
+  for (const sound of filtered) {
+    if (!grouped.has(sound.category)) grouped.set(sound.category, []);
+    grouped.get(sound.category)!.push(sound);
+  }
+
+  // Build output in category order
+  const rows: string[] = [];
+  const knownCategories = new Set<string>(CATEGORY_ORDER);
+
+  for (const cat of CATEGORY_ORDER) {
+    const entries = grouped.get(cat);
+    if (!entries || entries.length === 0) continue;
+    const label = CATEGORY_LABELS[cat] ?? cat;
+    rows.push(`  ${pc.cyan(label)}`);
+    for (const s of entries) {
+      const active = s.active ? pc.green(" (active)") : "";
+      if (s.isSpotify) {
+        rows.push(`    ${pc.cyan(s.name)}  ${pc.dim(s.description)}  built-in${active}`);
+      } else if (s.status === "installed") {
+        rows.push(`    ${pc.cyan(s.name)}  ${pc.dim(`${s.fileCount} file(s)`)}  installed${active}`);
+      } else if (s.status === "bundled") {
+        rows.push(`    ${pc.cyan(s.name)}  ${pc.dim(`${s.fileCount} file(s)`)}  bundled${active}`);
+      } else {
+        rows.push(`    ${pc.dim(s.name)}  ${pc.dim(s.description)}  ${pc.dim("available")}`);
+      }
+    }
+  }
+
+  // Unknown categories
+  for (const [cat, entries] of grouped) {
+    if (knownCategories.has(cat)) continue;
+    rows.push(`  ${pc.cyan(cat)}`);
+    for (const s of entries) {
+      const active = s.active ? pc.green(" (active)") : "";
+      rows.push(`    ${pc.dim(s.name)}  ${pc.dim(s.description)}  ${pc.dim(s.status)}${active}`);
     }
   }
 
@@ -697,12 +953,16 @@ function runHelp(): void {
       `  ${pc.cyan("npx codevator")}              Install hooks (default, Claude Code)`,
       `  ${pc.cyan("npx codevator setup --agent")} <name>  Install hooks for a specific agent`,
       `  ${pc.cyan("npx codevator mode")} <name>  Set sound mode`,
+      `  ${pc.cyan("npx codevator mode --random")}  Pick a random installed sound`,
+      `  ${pc.cyan("npx codevator mode --random --category")} <cat>  Random from category`,
       `  ${pc.cyan("npx codevator add")} [name]   Download a sound from the registry`,
+      `  ${pc.cyan("npx codevator add --category")} <cat>  Browse sounds by category`,
       `  ${pc.cyan("npx codevator on")} / ${pc.cyan("off")}     Enable or disable sounds`,
       `  ${pc.cyan("npx codevator volume")} <n>   Set volume (0-100)`,
       `  ${pc.cyan("npx codevator status")}       Show current settings`,
       `  ${pc.cyan("npx codevator doctor")}       Check installation health`,
       `  ${pc.cyan("npx codevator list")}         List available sounds`,
+      `  ${pc.cyan("npx codevator list --category")} <cat>  List sounds by category`,
       `  ${pc.cyan("npx codevator preview")} <m>  Preview a sound for 5 seconds`,
       `  ${pc.cyan("npx codevator stats")}        Show usage statistics`,
       `  ${pc.cyan("npx codevator import")} <file> Import a custom sound file`,

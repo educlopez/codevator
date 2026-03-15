@@ -103,6 +103,34 @@ describe("backward compatibility", () => {
   });
 });
 
+describe("lastRandom persistence", () => {
+  it("preserves lastRandom field through set/get cycle", () => {
+    setConfig({ mode: "elevator", volume: 70, enabled: true, lastRandom: "ocean" });
+    const config = getConfig();
+    expect(config.lastRandom).toBe("ocean");
+  });
+
+  it("handles config without lastRandom field (backward compatible)", () => {
+    fs.mkdirSync(TEST_CONFIG_DIR, { recursive: true });
+    fs.writeFileSync(
+      path.join(TEST_CONFIG_DIR, "config.json"),
+      JSON.stringify({ mode: "elevator", volume: 70, enabled: true })
+    );
+    const config = getConfig();
+    expect(config.lastRandom).toBeUndefined();
+  });
+
+  it("updates lastRandom without losing other config", () => {
+    setConfig({ mode: "rain", volume: 80, enabled: true });
+    setConfig({ lastRandom: "ocean" });
+    const config = getConfig();
+    expect(config.mode).toBe("rain");
+    expect(config.volume).toBe(80);
+    expect(config.enabled).toBe(true);
+    expect(config.lastRandom).toBe("ocean");
+  });
+});
+
 describe("isValidMode", () => {
   it("returns true for built-in modes", () => {
     expect(isValidMode("elevator")).toBe(true);

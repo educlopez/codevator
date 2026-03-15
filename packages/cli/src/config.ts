@@ -14,6 +14,7 @@ export interface CodevatorConfig {
   profiles?: Record<string, SoundProfile>;
   activeProfile?: string;
   agent?: string;
+  lastRandom?: string;
 }
 
 export const MODES = [
