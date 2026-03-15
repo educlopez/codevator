@@ -49,11 +49,10 @@ const TOC = [
   { id: "custom-sounds", label: "Custom sounds" },
   { id: "profiles", label: "Profiles" },
   { id: "multi-agent", label: "Multi-agent" },
-  { id: "agent-skill", label: "Agent Skill" },
   { id: "menubar", label: "Menubar app" },
   { id: "how-it-works", label: "How it works" },
   { id: "configuration", label: "Configuration" },
-  { id: "skill", label: "Claude Code skill" },
+  { id: "skill", label: "Agent skill" },
   { id: "uninstall", label: "Uninstall" },
 ];
 
@@ -289,21 +288,6 @@ export function DocsContent() {
               </div>
             </Section>
 
-            {/* Agent Skill */}
-            <Section id="agent-skill" title="Agent Skill">
-              <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
-                <p>
-                  Install the codevator skill so your AI agent can control music for you:
-                </p>
-                <CodeBlock copyText="npx skills add educlopez/codevator">npx skills add educlopez/codevator</CodeBlock>
-                <p>
-                  This installs the skill across all supported agents — Claude Code, Cursor,
-                  Windsurf, Gemini CLI, and 30+ more. Once installed, just ask your agent
-                  things like &quot;play some lo-fi&quot; or &quot;switch to nature sounds&quot;.
-                </p>
-              </div>
-            </Section>
-
             {/* Menubar app */}
             <Section id="menubar" title="Menubar app">
               <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
@@ -400,19 +384,25 @@ export function DocsContent() {
               </div>
             </Section>
 
-            {/* Claude Code skill */}
-            <Section id="skill" title="Claude Code skill">
+            {/* Agent skill */}
+            <Section id="skill" title="Agent skill">
               <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
                 <p>
-                  Setup also installs a Claude Code skill that lets the agent control
-                  music directly. Ask Claude things like:
+                  Install the codevator skill so your AI agent can control music for you:
+                </p>
+                <CodeBlock copyText="npx skills add educlopez/codevator">npx skills add educlopez/codevator</CodeBlock>
+                <p>
+                  This installs the skill across all supported agents — Claude Code, Cursor,
+                  Windsurf, Gemini CLI, and 30+ more. Once installed, just ask your agent
+                  things like:
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-olive-600">
-                  <li>&ldquo;Change the music to retro&rdquo;</li>
-                  <li>&ldquo;Turn off the elevator music&rdquo;</li>
+                  <li>&ldquo;Play some lo-fi music&rdquo;</li>
+                  <li>&ldquo;Switch to nature sounds&rdquo;</li>
                   <li>&ldquo;Set the volume to 50&rdquo;</li>
+                  <li>&ldquo;Show me my stats&rdquo;</li>
                 </ul>
-                <p>Claude will run the appropriate codevator command.</p>
+                <p>Your agent will run the appropriate codevator command.</p>
               </div>
             </Section>
 
