@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Drawer } from "vaul";
 
 const NAV_PAGES = [
   { label: "Docs", href: "/docs" },
@@ -54,87 +55,92 @@ export function Header({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
   }, [alwaysVisible]);
 
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-40 transition-all duration-700"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(-100%)",
-        pointerEvents: visible ? "auto" : "none",
-      }}
-    >
-      <nav className="bg-olive-100/80 backdrop-blur-md border-b border-olive-950/5">
-        <div className="mx-auto flex h-16 max-w-7xl items-center px-6 lg:px-10">
-          {/* Logo — left */}
-          <div className="flex-1">
-            <a href="/" className="font-display text-2xl text-olive-950">
-              Codevator.
-            </a>
-          </div>
-
-          {/* Pages — center */}
-          <div className="flex items-center gap-8 max-lg:hidden">
-            {NAV_PAGES.map((page) => (
-              <a
-                key={page.label}
-                href={page.href}
-                className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors"
-              >
-                {page.label}
+    <>
+      <header
+        className="fixed top-0 left-0 right-0 z-40 transition-all duration-700"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(-100%)",
+          pointerEvents: visible ? "auto" : "none",
+        }}
+      >
+        <nav className="bg-olive-100/80 backdrop-blur-md border-b border-olive-950/5">
+          <div className="mx-auto flex h-16 max-w-7xl items-center px-6 lg:px-10">
+            {/* Logo — left */}
+            <div className="flex-1">
+              <a href="/" className="font-display text-2xl text-olive-950">
+                Codevator.
               </a>
-            ))}
-          </div>
+            </div>
 
-          {/* Social icons + CTA — right */}
-          <div className="flex flex-1 items-center justify-end gap-1">
-            <div className="flex items-center gap-1 max-lg:hidden">
-              {SOCIAL_LINKS.map((link) => (
+            {/* Pages — center (desktop) */}
+            <div className="flex items-center gap-8 max-lg:hidden">
+              {NAV_PAGES.map((page) => (
                 <a
-                  key={link.label}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full p-2 text-olive-500 hover:text-olive-950 hover:bg-olive-950/5 transition-colors"
-                  aria-label={link.label}
+                  key={page.label}
+                  href={page.href}
+                  className="text-sm/7 font-medium text-olive-700 hover:text-olive-950 transition-colors"
                 >
-                  {link.icon}
+                  {page.label}
                 </a>
               ))}
             </div>
 
-            <a
-              href="/#get-started"
-              className="ml-3 rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white hover:bg-olive-800 transition-colors max-sm:hidden"
-            >
-              Get started
-            </a>
+            {/* Social icons + CTA — right */}
+            <div className="flex flex-1 items-center justify-end gap-1">
+              <div className="flex items-center gap-1">
+                {SOCIAL_LINKS.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-full p-2 text-olive-500 hover:text-olive-950 hover:bg-olive-950/5 transition-colors"
+                    aria-label={link.label}
+                  >
+                    {link.icon}
+                  </a>
+                ))}
+              </div>
 
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-              className="inline-flex rounded-full p-1.5 text-olive-950 hover:bg-olive-950/10 lg:hidden"
-            >
-              {menuOpen ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="size-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="currentColor" className="size-6">
-                  <path
-                    fillRule="evenodd"
-                    d="M3.75 8.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75ZM3.75 15.75a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </button>
+              <a
+                href="/#get-started"
+                className="ml-3 rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white hover:bg-olive-800 transition-colors max-sm:hidden"
+              >
+                Get started
+              </a>
+            </div>
           </div>
-        </div>
+        </nav>
+      </header>
 
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div className="lg:hidden border-t border-olive-950/5 bg-olive-100 px-6 pb-6 pt-4">
-            <div className="flex flex-col gap-4">
+      {/* Floating mobile menu button — bottom right, thumb zone */}
+      <Drawer.Root open={menuOpen} onOpenChange={setMenuOpen}>
+        <Drawer.Trigger asChild>
+          <button
+            aria-label="Open menu"
+            className="fixed bottom-6 right-6 z-40 flex w-10 h-10 items-center justify-center rounded-full bg-olive-950/80 border border-white/10 backdrop-blur-sm text-white hover:border-olive-300/40 hover:bg-olive-950 active:scale-95 transition-all lg:hidden"
+            style={{
+              opacity: visible ? 1 : 0,
+              pointerEvents: visible ? "auto" : "none",
+              transition: "opacity 0.7s, transform 0.15s",
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
+              <path
+                fillRule="evenodd"
+                d="M3.75 8.25a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75ZM3.75 15.75a.75.75 0 0 1 .75-.75h15a.75.75 0 0 1 0 1.5h-15a.75.75 0 0 1-.75-.75Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        </Drawer.Trigger>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 z-50 bg-black/40" />
+          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl bg-olive-100 outline-none">
+            <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-olive-950/20" />
+            <Drawer.Title className="sr-only">Navigation menu</Drawer.Title>
+            <div className="flex flex-col gap-4 px-6 pb-8 pt-6">
               {NAV_PAGES.map((page) => (
                 <a
                   key={page.label}
@@ -164,15 +170,15 @@ export function Header({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
 
               <a
                 href="/#get-started"
-                className="rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white text-center hover:bg-olive-800 transition-colors sm:hidden"
+                className="rounded-full bg-olive-950 px-4 py-2 text-sm font-medium text-white text-center hover:bg-olive-800 transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
                 Get started
               </a>
             </div>
-          </div>
-        )}
-      </nav>
-    </header>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
+    </>
   );
 }
