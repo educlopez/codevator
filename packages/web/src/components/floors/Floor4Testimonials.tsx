@@ -47,11 +47,20 @@ export function Floor4Testimonials() {
               <blockquote className="font-display text-lg text-olive-950 leading-relaxed italic">
                 &ldquo;{t.quote}&rdquo;
               </blockquote>
-              <figcaption>
-                <p className="text-sm font-semibold text-olive-950">
-                  {t.name}
-                </p>
-                <p className="text-xs text-olive-600">{t.title}</p>
+              <figcaption className="flex items-center gap-3">
+                <img
+                  src={`https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=1a1a1a&textColor=d4d4a8`}
+                  alt={`${t.name} avatar`}
+                  width={40}
+                  height={40}
+                  className="size-10 rounded-full"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-olive-950">
+                    {t.name}
+                  </p>
+                  <p className="text-xs text-olive-600">{t.title}</p>
+                </div>
               </figcaption>
             </figure>
           ))}

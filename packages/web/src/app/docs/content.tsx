@@ -72,7 +72,7 @@ export function DocsContent() {
             Getting started
           </h1>
           <p className="text-base/7 text-olive-600 max-w-lg">
-            Everything you need to set up and use Codevator with Claude Code.
+            Everything you need to set up and use Codevator with your coding agent.
           </p>
         </div>
 
@@ -115,17 +115,17 @@ export function DocsContent() {
               <div className="flex flex-col gap-3">
                 {[
                   { cmd: "npx codevator", desc: "Install hooks and download default sound" },
-                  { cmd: "npx codevator mode <name>", desc: "Set sound mode" },
+                  { cmd: "npx codevator mode [name]", desc: "Set sound mode (--category to filter, --random for a surprise)" },
                   { cmd: "npx codevator add [name]", desc: "Download a sound from the registry" },
                   { cmd: "npx codevator on / off", desc: "Enable or disable sounds" },
                   { cmd: "npx codevator volume <n>", desc: "Set volume (0\u2013100)" },
-                  { cmd: "npx codevator status", desc: "Show current settings" },
+                  { cmd: "npx codevator status", desc: "Show current settings, mini-stats, and feedback link" },
                   { cmd: "npx codevator list", desc: "Show installed, bundled, and available sounds" },
                   { cmd: "npx codevator preview <mode>", desc: "Play a 5-second preview of a sound mode" },
                   { cmd: "npx codevator import <file>", desc: "Import a custom audio file as a sound mode" },
                   { cmd: "npx codevator remove <name>", desc: "Delete a custom sound (bundled sounds are protected)" },
                   { cmd: "npx codevator doctor", desc: "Check installation health (hooks, audio, config)" },
-                  { cmd: "npx codevator stats", desc: "Show usage statistics (plays, favorite mode)" },
+                  { cmd: "npx codevator stats", desc: "Show usage statistics (play time, streaks, milestones)" },
                   { cmd: "npx codevator profile <action>", desc: "Manage saved presets (create, use, list, delete)" },
                   { cmd: "npx codevator install-menubar", desc: "Compile and install the macOS menubar app" },
                   { cmd: "npx codevator uninstall-menubar", desc: "Remove the menubar app" },
@@ -147,14 +147,46 @@ export function DocsContent() {
             {/* Sounds */}
             <Section id="sounds" title="Sounds">
               <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
-                <p>Built-in sound modes:</p>
+                <p>
+                  Sounds are organized in three categories. Built-in sound modes:
+                </p>
+                <p className="font-semibold text-olive-950 mt-2 mb-0">Focus &amp; Ambient</p>
                 <div className="grid gap-2">
                   {[
                     { name: "elevator", desc: "Smooth jazz elevator music (default)" },
                     { name: "typewriter", desc: "Rhythmic mechanical keystrokes" },
-                    { name: "ambient", desc: "Gentle rain and atmospheric background" },
-                    { name: "retro", desc: "Mellow 8-bit synthesized arpeggios" },
+                    { name: "ambient", desc: "Gentle atmospheric background" },
                     { name: "minimal", desc: "Deep warm hum with slow breathing" },
+                    { name: "lofi-relax", desc: "Laid-back lo-fi beats" },
+                    { name: "lofi-chill", desc: "Mellow lo-fi grooves" },
+                    { name: "lofi-cozy", desc: "Warm lo-fi vibes" },
+                  ].map((mode) => (
+                    <div key={mode.name} className="flex items-baseline gap-3 py-1">
+                      <code className="text-sm font-mono text-olive-950">{mode.name}</code>
+                      <span className="text-sm text-olive-500">{mode.desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="font-semibold text-olive-950 mt-2 mb-0">Nature</p>
+                <div className="grid gap-2">
+                  {[
+                    { name: "rain", desc: "Steady rainfall" },
+                    { name: "forest", desc: "Birds and rustling leaves" },
+                    { name: "ocean", desc: "Gentle ocean waves" },
+                  ].map((mode) => (
+                    <div key={mode.name} className="flex items-baseline gap-3 py-1">
+                      <code className="text-sm font-mono text-olive-950">{mode.name}</code>
+                      <span className="text-sm text-olive-500">{mode.desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="font-semibold text-olive-950 mt-2 mb-0">Music &amp; Retro</p>
+                <div className="grid gap-2">
+                  {[
+                    { name: "retro", desc: "Mellow 8-bit synthesized arpeggios" },
+                    { name: "classical-piano", desc: "Soft classical piano pieces" },
+                    { name: "ambient-guitar", desc: "Gentle fingerpicked guitar" },
+                    { name: "epic-strings", desc: "Cinematic orchestral strings" },
                     { name: "spotify", desc: "Controls Spotify volume — fades in/out with your coding session (macOS)" },
                   ].map((mode) => (
                     <div key={mode.name} className="flex items-baseline gap-3 py-1">
@@ -167,7 +199,9 @@ export function DocsContent() {
                 <CodeBlock copyText="npx codevator mode ambient">npx codevator mode ambient</CodeBlock>
                 <p>
                   Or run <code className="font-mono text-olive-950">npx codevator mode</code> without
-                  a name to pick from an interactive list.
+                  a name to pick from an interactive category → sound picker. Use{" "}
+                  <code className="font-mono text-olive-950">--category</code> to filter by category
+                  or <code className="font-mono text-olive-950">--random</code> to play a random sound.
                 </p>
                 <p>
                   Browse and preview all sounds at{" "}
@@ -233,7 +267,11 @@ export function DocsContent() {
                 <div className="grid gap-2">
                   {[
                     { name: "claude", desc: "Claude Code (default) — hooks in ~/.claude/settings.json" },
-                    { name: "codex", desc: "Codex — hooks in ~/.codex/config.toml" },
+                    { name: "codex", desc: "Codex CLI — hooks in ~/.codex/config.toml" },
+                    { name: "gemini", desc: "Gemini CLI — hooks in ~/.gemini/settings.json" },
+                    { name: "copilot", desc: "Copilot CLI — hooks in ~/.github-copilot/config.json" },
+                    { name: "cursor", desc: "Cursor — hooks in ~/.cursor/settings.json" },
+                    { name: "windsurf", desc: "Windsurf — hooks in ~/.windsurf/settings.json" },
                     { name: "opencode", desc: "OpenCode — plugin in ~/.config/opencode/plugins/" },
                   ].map((agent) => (
                     <div key={agent.name} className="flex items-baseline gap-3 py-1">

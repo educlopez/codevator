@@ -15,21 +15,53 @@ This installs hooks into your AI coding agent that automatically:
 
 ## Sound Modes
 
-Six built-in modes:
+15 sounds across 3 categories:
+
+### Focus & Ambient
 
 | Mode | Description |
 |------|-------------|
 | `elevator` | Classic smooth jazz elevator music (default) |
 | `typewriter` | Rhythmic mechanical keystrokes |
-| `ambient` | Soft atmospheric background |
-| `retro` | Mellow 8-bit synthesized arpeggios |
 | `minimal` | Deep warm hum with slow breathing |
+| `lofi-relax` | Relaxing lo-fi beat |
+| `lofi-chill` | Smooth and mellow lo-fi flow |
+| `lofi-cozy` | Cozy lo-fi night vibes |
+
+### Nature
+
+| Mode | Description |
+|------|-------------|
+| `ambient` | Soft textures and gentle drones |
+| `rain` | Steady rainfall on a window |
+| `forest` | Birds and rustling leaves |
+| `ocean` | Waves rolling onto shore |
+
+### Music & Retro
+
+| Mode | Description |
+|------|-------------|
+| `retro` | Mellow 8-bit synthesized arpeggios |
+| `classical-piano` | Gentle classical piano |
+| `ambient-guitar` | Soft ambient guitar melodies |
+| `epic-strings` | Soaring strings and orchestral warmth |
+
+### Integration
+
+| Mode | Description |
+|------|-------------|
 | `spotify` | Controls your Spotify volume (macOS only) |
 
 Switch modes:
 
 ```bash
 npx codevator mode ambient
+```
+
+Pick a random sound from a category:
+
+```bash
+npx codevator --random --category nature
 ```
 
 ### Spotify Mode
@@ -93,12 +125,16 @@ npx codevator profile delete deep-work
 
 ## Multi-Agent Support
 
-Codevator works with multiple AI coding agents:
+Codevator works with 7 AI coding agents:
 
 | Agent | Setup |
 |-------|-------|
 | **Claude Code** | `npx codevator` (default) |
 | **OpenAI Codex CLI** | `npx codevator setup --agent codex` |
+| **Gemini CLI** | `npx codevator setup --agent gemini` |
+| **Copilot CLI** | `npx codevator setup --agent copilot` |
+| **Cursor** | `npx codevator setup --agent cursor` |
+| **Windsurf** | `npx codevator setup --agent windsurf` |
 | **OpenCode** | `npx codevator setup --agent opencode` |
 
 Each agent adapter configures the appropriate hooks for that agent's lifecycle events.
@@ -109,12 +145,14 @@ Each agent adapter configures the appropriate hooks for that agent's lifecycle e
 npx codevator                          Install hooks (Claude Code by default)
 npx codevator setup --agent <name>     Install hooks for a specific agent
 npx codevator mode <name>              Set sound mode
+npx codevator --random                 Pick a random sound mode
+npx codevator --random --category <c>  Random sound from a category (focus, nature, music)
 npx codevator on / off                 Enable or disable sounds
 npx codevator volume <n>               Set volume (0-100)
 npx codevator status                   Show current settings and active agent
 npx codevator doctor                   Diagnose hooks, audio, config, and sounds
-npx codevator stats                    Show session count, play time, favorite mode
-npx codevator list                     List all available sounds
+npx codevator stats                    Show duration, streaks, and milestones
+npx codevator list                     List all available sounds by category
 npx codevator preview <mode>           Preview a sound for 5 seconds
 npx codevator import <file> --name <n> Import a custom sound file
 npx codevator remove <name>            Remove a custom sound

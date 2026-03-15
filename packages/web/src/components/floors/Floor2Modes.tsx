@@ -75,7 +75,7 @@ const MODE_ICONS: Record<string, ReactNode> = {
 const FALLBACK_MODES: ModeItem[] = [
   { id: "elevator", label: MODE_ICONS.elevator, description: "Lo-fi warmth. The default. Like being on hold with the future.", color: "#1a6b4a" },
   { id: "typewriter", label: MODE_ICONS.typewriter, description: "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.", color: "#8B7355" },
-  { id: "ambient", label: MODE_ICONS.ambient, description: "Gentle rain and a low drone. The outside world, piped in.", color: "#4a7ab5" },
+  { id: "ambient", label: MODE_ICONS.ambient, description: "Soft textures and gentle drones. The outside world, piped in.", color: "#4a7ab5" },
   { id: "retro", label: MODE_ICONS.retro, description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.", color: "#a855f7" },
   { id: "minimal", label: MODE_ICONS.minimal, description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.", color: "#999999" },
   { id: "spotify", label: MODE_ICONS.spotify, description: "Controls your Spotify playback volume. Music fades in when coding starts, fades out when done.", color: "#1DB954" },
@@ -98,9 +98,9 @@ export function Floor2Modes() {
     fetch("/sounds.json")
       .then((res) => res.json())
       .then((data: { sounds: SoundEntry[] }) => {
-        const builtIn = data.sounds.filter((s) => s.category === "built-in" || s.category === "integration");
-        if (builtIn.length > 0) {
-          setModes(builtIn.map(toModeItem));
+        const all = data.sounds.filter((s) => s.category !== "custom");
+        if (all.length > 0) {
+          setModes(all.map(toModeItem));
         }
       })
       .catch(() => {});

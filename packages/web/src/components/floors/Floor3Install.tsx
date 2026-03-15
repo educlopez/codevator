@@ -119,7 +119,7 @@ export function Floor3Install() {
           <StepCard
             number={1}
             title="Install"
-            description="One command sets up the hooks. Codevator integrates directly with Claude Code — no config files, no setup wizards."
+            description="One command sets up the hooks. Works with Claude Code, Codex, Gemini CLI, Copilot, Cursor, Windsurf, and OpenCode — no config files, no setup wizards."
             gradientFrom="#637c86"
             gradientTo="#778599"
             visible={visible}
@@ -151,14 +151,14 @@ export function Floor3Install() {
           <StepCard
             number={3}
             title="Customize"
-            description="Switch modes, adjust volume, or tell your agent directly. On macOS, you can also install the menubar app for visual controls."
+            description="Switch modes, pick a random sound from a category, adjust volume, or tell your agent directly. On macOS, you can also install the menubar app for visual controls."
             gradientFrom="#8d7359"
             gradientTo="#765959"
             visible={visible}
             cardDelay={600}
             lines={[
-              <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator mode retro</span></p>,
-              <p key="b"><Accent color={brown}>└</Accent> <span className="text-white/70">Mode set to: <Accent color={brown}>retro</Accent></span></p>,
+              <p key="a"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator --random --category nature</span></p>,
+              <p key="b"><Accent color={brown}>└</Accent> <span className="text-white/70">Mode set to: <Accent color={brown}>ocean</Accent></span></p>,
               <p key="c" className="mt-1"><span className="text-white/60">$</span> <span className="text-white/90">npx codevator volume 50</span></p>,
               <p key="d"><Accent color={brown}>◆</Accent> <span className="text-white/70">Volume set to 50% █████░░░░░</span></p>,
             ]}

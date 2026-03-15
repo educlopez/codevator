@@ -172,7 +172,7 @@ export function ElevatorDoors() {
                 rel="noopener noreferrer"
                 className="group inline-flex max-w-full gap-x-3 overflow-hidden rounded-full bg-olive-950/5 px-3 py-0.5 text-sm/6 text-olive-950 hover:bg-olive-950/10 transition-colors sm:items-center"
               >
-                <span className="truncate">Sounds for Claude Code</span>
+                <span className="truncate">Sounds for your coding agent</span>
                 <span className="h-3 w-px bg-olive-950/20 max-sm:hidden" />
                 <span className="inline-flex shrink-0 items-center gap-1 font-semibold">
                   Star on GitHub
@@ -186,7 +186,7 @@ export function ElevatorDoors() {
               </h1>
               <div className="text-lg/8 text-olive-700 flex max-w-2xl flex-col gap-4 text-center lg:text-left">
                 <p>
-                  Background sounds that play while Claude Code works and stop when it needs your attention — so the silence doesn&apos;t drive you to a &ldquo;that&apos;s what she said&rdquo; moment.
+                  Background sounds that play while your coding agent works and stop when it needs your attention — so the silence doesn&apos;t drive you to a &ldquo;that&apos;s what she said&rdquo; moment.
                 </p>
               </div>
               <CopyCommand command="npx codevator" />

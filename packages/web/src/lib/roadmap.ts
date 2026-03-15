@@ -12,7 +12,7 @@ export const FALLBACK_ITEMS: RoadmapItem[] = [
   {
     title: "Multi-agent mode",
     description:
-      "Set up codevator for Claude Code, Codex, or OpenCode. Each agent gets its own hooks and session tracking.",
+      "Set up codevator for 7 agents: Claude Code, Codex, Gemini CLI, Copilot, Cursor, Windsurf, and OpenCode. Each agent gets its own hooks and session tracking.",
     status: "Done",
   },
   {
@@ -28,10 +28,10 @@ export const FALLBACK_ITEMS: RoadmapItem[] = [
     status: "Exploring",
   },
   {
-    title: "More agents support",
+    title: "Sound categories",
     description:
-      "Extend codevator beyond Claude Code. Support for Cursor, Windsurf, Codex, and OpenCode.",
-    status: "Exploring",
+      "Browse sounds by category: Focus & Ambient, Nature, and Music & Retro. Use --random --category to discover new favorites.",
+    status: "Done",
   },
   {
     title: "Sound themes",
