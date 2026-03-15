@@ -49,6 +49,7 @@ const TOC = [
   { id: "custom-sounds", label: "Custom sounds" },
   { id: "profiles", label: "Profiles" },
   { id: "multi-agent", label: "Multi-agent" },
+  { id: "agent-skill", label: "Agent Skill" },
   { id: "menubar", label: "Menubar app" },
   { id: "how-it-works", label: "How it works" },
   { id: "configuration", label: "Configuration" },
@@ -170,6 +171,7 @@ export function DocsContent() {
                 <p className="font-semibold text-olive-950 mt-2 mb-0">Nature</p>
                 <div className="grid gap-2">
                   {[
+                    { name: "ambient", desc: "Gentle atmospheric background" },
                     { name: "rain", desc: "Steady rainfall" },
                     { name: "forest", desc: "Birds and rustling leaves" },
                     { name: "ocean", desc: "Gentle ocean waves" },
@@ -283,6 +285,21 @@ export function DocsContent() {
                 <p>
                   All agents share the same config, sounds, and profiles. The only difference is
                   where the hooks are installed. You can set up multiple agents on the same machine.
+                </p>
+              </div>
+            </Section>
+
+            {/* Agent Skill */}
+            <Section id="agent-skill" title="Agent Skill">
+              <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
+                <p>
+                  Install the codevator skill so your AI agent can control music for you:
+                </p>
+                <CodeBlock copyText="npx skills add educlopez/codevator">npx skills add educlopez/codevator</CodeBlock>
+                <p>
+                  This installs the skill across all supported agents — Claude Code, Cursor,
+                  Windsurf, Gemini CLI, and 30+ more. Once installed, just ask your agent
+                  things like &quot;play some lo-fi&quot; or &quot;switch to nature sounds&quot;.
                 </p>
               </div>
             </Section>

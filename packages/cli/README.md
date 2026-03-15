@@ -139,12 +139,23 @@ Codevator works with 7 AI coding agents:
 
 Each agent adapter configures the appropriate hooks for that agent's lifecycle events.
 
+## Agent Skill
+
+Install the codevator skill so your AI agent can control music for you:
+
+```bash
+npx skills add educlopez/codevator
+```
+
+This installs the skill across all supported agents (Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ more). Once installed, just ask your agent to "play some lo-fi" or "switch to nature sounds".
+
 ## Commands
 
 ```
 npx codevator                          Install hooks (Claude Code by default)
 npx codevator setup --agent <name>     Install hooks for a specific agent
 npx codevator mode <name>              Set sound mode
+npx codevator add [name]               Download a sound
 npx codevator --random                 Pick a random sound mode
 npx codevator --random --category <c>  Random sound from a category (focus, nature, music)
 npx codevator on / off                 Enable or disable sounds
@@ -160,7 +171,23 @@ npx codevator profile create <name>    Create a sound profile
 npx codevator profile use <name>       Apply a sound profile
 npx codevator profile list             List all profiles
 npx codevator profile delete <name>    Delete a profile
+npx codevator install-menubar          Install macOS menu bar app
+npx codevator uninstall-menubar        Remove menu bar app
 npx codevator uninstall                Remove hooks from agent
+```
+
+## Menu Bar App
+
+On macOS, you can install a menu bar companion that shows the current sound mode and lets you control playback without the terminal:
+
+```bash
+npx codevator install-menubar
+```
+
+The app launches automatically when a coding session starts. To remove it:
+
+```bash
+npx codevator uninstall-menubar
 ```
 
 ## Troubleshooting
