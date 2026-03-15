@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
+import Link from "next/link";
 import { ElevatorButton } from "../ElevatorButton";
 import { AudioVisualizer } from "../AudioVisualizer";
 import { playMode, stopAudio } from "@/lib/audio";
+
+const BUILT_IN_MODE_IDS = ["elevator", "typewriter", "ambient", "retro", "minimal"];
 
 interface SoundEntry {
   name: string;
@@ -65,11 +68,6 @@ const MODE_ICONS: Record<string, ReactNode> = {
       <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
   ),
-  spotify: (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="size-6">
-      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-    </svg>
-  ),
 };
 
 const FALLBACK_MODES: ModeItem[] = [
@@ -78,7 +76,6 @@ const FALLBACK_MODES: ModeItem[] = [
   { id: "ambient", label: MODE_ICONS.ambient, description: "Soft textures and gentle drones. The outside world, piped in.", color: "#4a7ab5" },
   { id: "retro", label: MODE_ICONS.retro, description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.", color: "#a855f7" },
   { id: "minimal", label: MODE_ICONS.minimal, description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.", color: "#999999" },
-  { id: "spotify", label: MODE_ICONS.spotify, description: "Controls your Spotify playback volume. Music fades in when coding starts, fades out when done.", color: "#1DB954" },
 ];
 
 function toModeItem(sound: SoundEntry): ModeItem {
@@ -98,9 +95,9 @@ export function Floor2Modes() {
     fetch("/sounds.json")
       .then((res) => res.json())
       .then((data: { sounds: SoundEntry[] }) => {
-        const all = data.sounds.filter((s) => s.category !== "custom");
-        if (all.length > 0) {
-          setModes(all.map(toModeItem));
+        const builtIn = data.sounds.filter((s) => BUILT_IN_MODE_IDS.includes(s.name));
+        if (builtIn.length > 0) {
+          setModes(builtIn.map(toModeItem));
         }
       })
       .catch(() => {});
@@ -132,7 +129,7 @@ export function Floor2Modes() {
       <div className="flex flex-col items-center gap-10 sm:gap-16">
         <div className="flex flex-col items-center gap-6 text-center">
           <p className="text-sm/7 font-semibold text-olive-700">
-            {modes.length} Sound Modes
+            Built-in Sound Modes
           </p>
           <h2 className="font-display text-[2rem]/10 sm:text-5xl/14 text-olive-950 tracking-tight text-pretty">
             Try them. Pick a favorite.
@@ -155,6 +152,13 @@ export function Floor2Modes() {
             </div>
           ))}
         </div>
+
+        <Link
+          href="/sounds"
+          className="text-sm font-medium text-olive-600 hover:text-olive-900 transition-colors underline underline-offset-4 decoration-olive-300 hover:decoration-olive-500"
+        >
+          Explore the full sound gallery &rarr;
+        </Link>
 
         <div className="h-16 flex items-center justify-center">
           {active ? (

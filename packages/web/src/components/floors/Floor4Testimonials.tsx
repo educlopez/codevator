@@ -49,11 +49,11 @@ export function Floor4Testimonials() {
               </blockquote>
               <figcaption className="flex items-center gap-3">
                 <img
-                  src={`https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=1a1a1a&textColor=d4d4a8`}
+                  src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(t.name)}`}
                   alt={`${t.name} avatar`}
-                  width={40}
-                  height={40}
-                  className="size-10 rounded-full"
+                  width={48}
+                  height={48}
+                  className="size-12 rounded-full"
                 />
                 <div>
                   <p className="text-sm font-semibold text-olive-950">
