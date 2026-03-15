@@ -4,24 +4,28 @@ const TESTIMONIALS = [
       "I didn't know I needed elevator music until my agent started working in silence. Now I can't go back.",
     name: "M. Scout",
     title: "Macrodata Refinement",
+    avatar: "/testimonials/m-scout.png",
   },
   {
     quote:
       "The retro mode makes refactoring feel like a game. Productivity is its own reward.",
     name: "B. Goodman",
     title: "Optics & Design",
+    avatar: "/testimonials/b-goodman.png",
   },
   {
     quote:
       "I'm not superstitious, but I am a little stitious about coding in silence.",
     name: "M. Scott",
     title: "Regional Manager",
+    avatar: "/testimonials/m-scott.png",
   },
   {
     quote:
       "I have been playing elevator mode for three hours. I do not plan to stop. That is all.",
     name: "D. Schrute",
     title: "Assistant to the Regional Manager",
+    avatar: "/testimonials/d-schrute.png",
   },
 ];
 
@@ -49,11 +53,11 @@ export function Floor4Testimonials() {
               </blockquote>
               <figcaption className="flex items-center gap-3">
                 <img
-                  src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(t.name)}`}
+                  src={t.avatar}
                   alt={`${t.name} avatar`}
                   width={48}
                   height={48}
-                  className="size-12 rounded-full"
+                  className="size-12 rounded-full object-cover"
                 />
                 <div>
                   <p className="text-sm font-semibold text-olive-950">
