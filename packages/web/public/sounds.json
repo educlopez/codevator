@@ -13,7 +13,7 @@
       "name": "typewriter",
       "files": 2,
       "description": "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.",
-      "category": "mechanical",
+      "category": "focus",
       "color": "#8B7355"
     },
     {
@@ -45,23 +45,23 @@
       "color": "#1DB954"
     },
     {
-      "name": "lofi-chill",
+      "name": "lofi-relax",
       "files": 1,
-      "description": "Calm lo-fi beat with vinyl crackle. Perfect for long coding sessions.",
+      "description": "Relaxing lo-fi beat. Warm vibes for steady coding.",
       "category": "focus",
       "color": "#e8a87c"
     },
     {
-      "name": "lofi-jazz",
+      "name": "lofi-chill",
       "files": 1,
-      "description": "Jazzy lo-fi hip hop. Smooth keys over a dusty beat.",
+      "description": "Lo-fi chill music. Smooth and mellow background flow.",
       "category": "focus",
       "color": "#d4a574"
     },
     {
-      "name": "deep-focus",
+      "name": "lofi-cozy",
       "files": 1,
-      "description": "Slow evolving pad with binaural undertones. Maximum concentration.",
+      "description": "Cozy lo-fi night vibes. Good night coding companion.",
       "category": "focus",
       "color": "#2d3436"
     },
@@ -87,13 +87,6 @@
       "color": "#0984e3"
     },
     {
-      "name": "thunder",
-      "files": 1,
-      "description": "Distant thunder with light rain. Dramatic yet soothing.",
-      "category": "nature",
-      "color": "#2d3436"
-    },
-    {
       "name": "classical-piano",
       "files": 1,
       "description": "Gentle classical piano. Timeless background for deep work.",
@@ -101,60 +94,18 @@
       "color": "#fdcb6e"
     },
     {
-      "name": "synthwave",
+      "name": "ambient-guitar",
       "files": 1,
-      "description": "80s-inspired synth arpeggios. Neon-lit productivity.",
-      "category": "music",
-      "color": "#e84393"
-    },
-    {
-      "name": "jazz-cafe",
-      "files": 1,
-      "description": "Upright bass and brushed drums. A quiet corner booth.",
+      "description": "Soft ambient guitar. Gentle melodies for creative flow.",
       "category": "music",
       "color": "#b57a3a"
     },
     {
-      "name": "mechanical-keyboard",
+      "name": "epic-strings",
       "files": 1,
-      "description": "Cherry MX Blue switches. The satisfying click-clack.",
-      "category": "mechanical",
-      "color": "#636e72"
-    },
-    {
-      "name": "clock-tower",
-      "files": 1,
-      "description": "Ticking gears and pendulum. Steady mechanical rhythm.",
-      "category": "mechanical",
-      "color": "#b8860b"
-    },
-    {
-      "name": "space-drone",
-      "files": 1,
-      "description": "Deep space ambience. Low-frequency hum of a starship bridge.",
-      "category": "atmosphere",
-      "color": "#0c0c1d"
-    },
-    {
-      "name": "fireplace",
-      "files": 1,
-      "description": "Crackling fire with occasional pops. Warm and cozy.",
-      "category": "atmosphere",
-      "color": "#e17055"
-    },
-    {
-      "name": "coffee-shop",
-      "files": 1,
-      "description": "Muted chatter and clinking cups. The familiar hum of a cafe.",
-      "category": "atmosphere",
-      "color": "#d68910"
-    },
-    {
-      "name": "white-noise",
-      "files": 1,
-      "description": "Pure white noise. Blocks everything out.",
-      "category": "focus",
-      "color": "#dfe6e9"
+      "description": "Soaring strings and orchestral warmth. Cinematic inspiration.",
+      "category": "music",
+      "color": "#e84393"
     }
   ]
 }

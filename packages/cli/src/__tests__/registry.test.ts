@@ -45,8 +45,6 @@ describe("groupByCategory", () => {
     // Insert in reverse order to test ordering
     const sounds: SoundEntry[] = [
       makeSoundEntry({ name: "spotify", category: "integration" }),
-      makeSoundEntry({ name: "space-drone", category: "atmosphere" }),
-      makeSoundEntry({ name: "clock-tower", category: "mechanical" }),
       makeSoundEntry({ name: "synthwave", category: "music" }),
       makeSoundEntry({ name: "rain", category: "nature" }),
       makeSoundEntry({ name: "deep-focus", category: "focus" }),
@@ -56,7 +54,7 @@ describe("groupByCategory", () => {
     const keys = [...grouped.keys()];
 
     // Keys should follow CATEGORY_ORDER
-    expect(keys).toEqual(["focus", "nature", "music", "mechanical", "atmosphere", "integration"]);
+    expect(keys).toEqual(["focus", "nature", "music", "integration"]);
   });
 
   it("puts unknown categories into 'other' bucket at the end", () => {
@@ -202,8 +200,6 @@ describe("CATEGORY_ORDER and CATEGORY_LABELS", () => {
     expect(CATEGORY_ORDER).toContain("focus");
     expect(CATEGORY_ORDER).toContain("nature");
     expect(CATEGORY_ORDER).toContain("music");
-    expect(CATEGORY_ORDER).toContain("mechanical");
-    expect(CATEGORY_ORDER).toContain("atmosphere");
     expect(CATEGORY_ORDER).toContain("integration");
   });
 
@@ -255,18 +251,18 @@ describe("sounds.json integration validation", () => {
     }
   });
 
-  it.skipIf(!soundsJsonExists)("has at least 20 entries", () => {
+  it.skipIf(!soundsJsonExists)("has at least 15 entries", () => {
     const raw = JSON.parse(fs.readFileSync(soundsJsonPath, "utf-8"));
-    expect(raw.sounds.length).toBeGreaterThanOrEqual(20);
+    expect(raw.sounds.length).toBeGreaterThanOrEqual(15);
   });
 
-  it.skipIf(!soundsJsonExists)("covers at least 4 content categories", () => {
+  it.skipIf(!soundsJsonExists)("covers at least 3 content categories", () => {
     const raw = JSON.parse(fs.readFileSync(soundsJsonPath, "utf-8"));
     const contentCategories = new Set(
       raw.sounds
         .filter((s: SoundEntry) => s.category !== "integration")
         .map((s: SoundEntry) => s.category)
     );
-    expect(contentCategories.size).toBeGreaterThanOrEqual(4);
+    expect(contentCategories.size).toBeGreaterThanOrEqual(3);
   });
 });

@@ -31,14 +31,12 @@ export interface SoundEntry {
 }
 
 // Display order for categories in pickers and list output
-export const CATEGORY_ORDER = ["focus", "nature", "music", "mechanical", "atmosphere", "integration"] as const;
+export const CATEGORY_ORDER = ["focus", "nature", "music", "integration"] as const;
 
 export const CATEGORY_LABELS: Record<string, string> = {
   focus: "Focus & Ambient",
   nature: "Nature",
   music: "Music & Retro",
-  mechanical: "Mechanical",
-  atmosphere: "Atmosphere",
   integration: "Integrations",
 };
 
