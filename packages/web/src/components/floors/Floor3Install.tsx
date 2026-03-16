@@ -141,7 +141,7 @@ export function Floor3Install() {
             visible={visible}
             cardDelay={300}
             lines={[
-              <p key="a" className="text-white/50">&gt; your-agent</p>,
+              <p key="a" className="text-white/50">&gt; lumon-terminal</p>,
               <p key="b" className="flex items-center gap-1.5"><Accent color={purple}>&#x25CF;</Accent> <span className="text-white/70">Read</span> <span className="text-white/50">src/auth/session.ts</span></p>,
               <p key="c" className="flex items-center gap-1.5"><Accent color={purple}>&#x25CF;</Accent> <span className="text-white/70">Edit</span> <span className="text-white/50">middleware.ts (+21)</span></p>,
               <div key="d" className="flex items-center gap-1.5 mt-1"><Accent color={purple}>&#x25C9;</Accent> <span className="text-white/60">elevator · playing</span></div>,

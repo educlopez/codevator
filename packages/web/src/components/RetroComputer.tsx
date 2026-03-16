@@ -474,7 +474,7 @@ function CrtTerminal() {
           <span className="w-[5px] h-[5px] rounded-full bg-white/20" />
           <span className="w-[5px] h-[5px] rounded-full bg-white/20" />
         </div>
-        <span className="mx-auto text-[8px] text-white/40">your-agent</span>
+        <span className="mx-auto text-[8px] text-white/40">lumon-terminal</span>
       </div>
 
       {/* Content */}

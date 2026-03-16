@@ -237,7 +237,7 @@ export function TerminalSimulation() {
           <span className="w-[10px] h-[10px] rounded-full bg-white/[0.15]" />
         </div>
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-[11px] text-white/50">
-          your-agent
+          lumon-terminal
         </span>
       </div>
 
