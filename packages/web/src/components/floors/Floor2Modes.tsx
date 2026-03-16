@@ -75,7 +75,7 @@ const FALLBACK_MODES: ModeItem[] = [
   { id: "typewriter", label: MODE_ICONS.typewriter, description: "Mechanical keystrokes over a warm pad. For the nostalgia of physical input.", color: "#8B7355" },
   { id: "ambient", label: MODE_ICONS.ambient, description: "Soft textures and gentle drones. The outside world, piped in.", color: "#4a7ab5" },
   { id: "retro", label: MODE_ICONS.retro, description: "Chiptune arpeggios. Reward your agent with the Music Dance Experience.", color: "#a855f7" },
-  { id: "minimal", label: MODE_ICONS.minimal, description: "A deep hum. Almost nothing. For those who prefer quiet contemplation.", color: "#999999" },
+  { id: "minimal", label: MODE_ICONS.minimal, description: "A deep hum. Almost nothing. For those who find silence too quiet.", color: "#999999" },
 ];
 
 function toModeItem(sound: SoundEntry): ModeItem {
@@ -129,10 +129,10 @@ export function Floor2Modes() {
       <div className="flex flex-col items-center gap-10 sm:gap-16">
         <div className="flex flex-col items-center gap-6 text-center">
           <p className="text-sm/7 font-semibold text-olive-700">
-            Built-in Sound Modes
+            15 Sounds. 5 Built-in Modes.
           </p>
           <h2 className="font-display text-[2rem]/10 sm:text-5xl/14 text-olive-950 tracking-tight text-pretty">
-            Try them. Pick a favorite.
+            Every floor sounds different.
           </h2>
         </div>
 

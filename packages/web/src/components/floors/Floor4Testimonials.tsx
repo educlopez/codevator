@@ -1,14 +1,14 @@
 const TESTIMONIALS = [
   {
     quote:
-      "I didn't know I needed elevator music until my agent started working in silence. Now I can't go back.",
+      "I didn't think I needed elevator music. Then the silence started. Now there's no going back.",
     name: "M. Scout",
     title: "Macrodata Refinement",
     avatar: "/testimonials/m-scout.png",
   },
   {
     quote:
-      "The retro mode makes refactoring feel like a game. Productivity is its own reward.",
+      "Retro mode makes refactoring feel like a game. Productivity, as they say, is its own reward.",
     name: "B. Goodman",
     title: "Optics & Design",
     avatar: "/testimonials/b-goodman.png",
@@ -22,7 +22,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "I have been playing elevator mode for three hours. I do not plan to stop. That is all.",
+      "Elevator mode has been running for three hours. I see no reason to stop. That is all.",
     name: "D. Schrute",
     title: "Assistant to the Regional Manager",
     avatar: "/testimonials/d-schrute.png",

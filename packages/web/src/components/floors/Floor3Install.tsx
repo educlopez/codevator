@@ -111,14 +111,14 @@ export function Floor3Install() {
             Get Started
           </p>
           <h2 className="font-display text-[2rem]/10 sm:text-5xl/14 text-olive-950 tracking-tight text-pretty">
-            Three steps. That&apos;s it.
+            Up and running before the doors close.
           </h2>
         </div>
 
         <div ref={gridRef} className="grid grid-cols-1 gap-2 lg:grid-cols-3">
           <StepCard
             number={1}
-            title="Install"
+            title="Hook it up"
             description="One command sets up the hooks. Works with Claude Code, Codex, Gemini CLI, Copilot, Cursor, Windsurf, and OpenCode — no config files, no setup wizards."
             gradientFrom="#637c86"
             gradientTo="#778599"
@@ -134,8 +134,8 @@ export function Floor3Install() {
 
           <StepCard
             number={2}
-            title="Code"
-            description="Music starts automatically when your agent begins working. Stops when it's done. You don't need to do anything."
+            title="Let it ride"
+            description="Music plays while your agent works. Stops when it's done. You do nothing — that's the whole point."
             gradientFrom="#7b627d"
             gradientTo="#8f6976"
             visible={visible}
@@ -150,8 +150,8 @@ export function Floor3Install() {
 
           <StepCard
             number={3}
-            title="Customize"
-            description="Switch modes, pick a random sound from a category, adjust volume, or tell your agent directly. On macOS, you can also install the menubar app for visual controls."
+            title="Make it yours"
+            description="Switch modes, pick a random sound from a category, adjust volume, or tell your agent directly. On macOS, the menubar app gives you visual controls."
             gradientFrom="#8d7359"
             gradientTo="#765959"
             visible={visible}

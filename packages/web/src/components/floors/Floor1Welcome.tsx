@@ -13,10 +13,10 @@ export function Floor1Welcome() {
                 What is Codevator?
               </p>
               <h2 className="font-display text-3xl md:text-4xl text-olive-700 leading-snug tracking-tight text-pretty">
-                Ambient music while your agent codes — so the silence doesn&apos;t feel so long.
+                Your agent works. The silence grows. We fixed that.
               </h2>
               <p className="text-sm/7 text-olive-600">
-                Run it from the terminal, or use the menubar app on macOS.
+                One command. Terminal or macOS menubar. The elevator is ready when you are.
               </p>
             </div>
             <a
@@ -25,7 +25,7 @@ export function Floor1Welcome() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-olive-950 hover:text-olive-700 transition-colors mt-auto"
             >
-              Learn more
+              View on GitHub
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 18l6-6-6-6" />
               </svg>

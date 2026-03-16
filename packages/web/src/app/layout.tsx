@@ -31,9 +31,9 @@ const caveat = Caveat({
 });
 
 const siteUrl = "https://codevator.dev";
-const title = "Codevator — Elevator music for your AI coding agent";
+const title = "Codevator — Background music for AI coding agents";
 const description =
-  "Elevator music, retro beats, and ambient vibes while your coding agent thinks. Your AI is working. Enjoy the ride.";
+  "Background music that plays while your AI agent codes and stops when it's done. 15 sounds, 7 agents supported. Free and open source.";
 
 export const metadata: Metadata = {
   title,
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Codevator — Elevator music for your coding agent",
+        alt: "Codevator — Background music for AI coding agents, with terminal UI and 15 built-in sounds",
       },
     ],
   },
