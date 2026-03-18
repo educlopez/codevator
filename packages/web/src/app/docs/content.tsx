@@ -1,29 +1,7 @@
-"use client";
-
-import { useState, Suspense, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Floor5Rooftop } from "@/components/floors/Floor5Rooftop";
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  function handleCopy() {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="absolute top-3 right-3 rounded-md px-2 py-1 text-xs font-medium text-olive-400 hover:text-olive-700 hover:bg-olive-950/5 transition-colors"
-      aria-label="Copy command"
-    >
-      {copied ? "Copied!" : "Copy"}
-    </button>
-  );
-}
+import { CopyButton } from "./copy-button";
+import { DocsTabs } from "./docs-tabs";
 
 function CodeBlock({ children, copyText }: { children: string; copyText?: string }) {
   return (
@@ -43,15 +21,9 @@ function Section({ id, title, children }: { id: string; title: string; children:
   );
 }
 
-const TABS = [
-  { key: "setup", label: "Setup" },
-  { key: "sounds", label: "Sounds" },
-  { key: "reference", label: "Reference" },
-] as const;
+export type TabKey = "setup" | "sounds" | "reference";
 
-type TabKey = (typeof TABS)[number]["key"];
-
-const TAB_TOC: Record<TabKey, { id: string; label: string }[]> = {
+export const TAB_TOC: Record<TabKey, { id: string; label: string }[]> = {
   setup: [
     { id: "quick-start", label: "Quick start" },
     { id: "multi-agent", label: "Multi-agent support" },
@@ -71,20 +43,19 @@ const TAB_TOC: Record<TabKey, { id: string; label: string }[]> = {
   ],
 };
 
-function isValidTab(value: string | null): value is TabKey {
-  return value === "setup" || value === "sounds" || value === "reference";
-}
-
 /* ── Tab content components ── */
 
 function SetupTab() {
   return (
     <>
-      {/* Quick start */}
       <Section id="quick-start" title="Quick start">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
-            Run this. It installs hooks and downloads the default sound:
+            Install{" "}
+            <a href="https://www.npmjs.com/package/codevator" target="_blank" rel="noopener noreferrer" className="text-olive-950 underline underline-offset-2 hover:text-olive-700">
+              codevator
+            </a>{" "}
+            via npx. It sets up hooks and downloads the default sound:
           </p>
           <CodeBlock copyText="npx codevator">npx codevator</CodeBlock>
           <p>
@@ -94,7 +65,6 @@ function SetupTab() {
         </div>
       </Section>
 
-      {/* Multi-agent support */}
       <Section id="multi-agent" title="Multi-agent support">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -103,17 +73,17 @@ function SetupTab() {
           <CodeBlock copyText="npx codevator setup --agent claude">npx codevator setup --agent claude</CodeBlock>
           <div className="grid gap-2 mt-2">
             {[
-              { name: "claude", desc: "Claude Code (default)" },
-              { name: "codex", desc: "Codex CLI" },
-              { name: "gemini", desc: "Gemini CLI" },
-              { name: "copilot", desc: "Copilot CLI" },
-              { name: "cursor", desc: "Cursor" },
-              { name: "windsurf", desc: "Windsurf" },
-              { name: "opencode", desc: "OpenCode" },
+              { name: "claude", desc: "Claude Code (default)", url: "https://docs.anthropic.com/en/docs/claude-code" },
+              { name: "codex", desc: "Codex CLI", url: "https://github.com/openai/codex" },
+              { name: "gemini", desc: "Gemini CLI", url: "https://github.com/google-gemini/gemini-cli" },
+              { name: "copilot", desc: "Copilot CLI", url: "https://docs.github.com/en/copilot/github-copilot-in-the-cli" },
+              { name: "cursor", desc: "Cursor", url: "https://cursor.com" },
+              { name: "windsurf", desc: "Windsurf", url: "https://windsurf.com" },
+              { name: "opencode", desc: "OpenCode", url: "https://github.com/opencode-ai/opencode" },
             ].map((agent) => (
               <div key={agent.name} className="flex items-baseline gap-3 py-1">
                 <code className="text-sm font-mono text-olive-950">{agent.name}</code>
-                <span className="text-sm text-olive-500">{agent.desc}</span>
+                <a href={agent.url} target="_blank" rel="noopener noreferrer" className="text-sm text-olive-500 underline underline-offset-2 hover:text-olive-700">{agent.desc}</a>
               </div>
             ))}
           </div>
@@ -124,13 +94,18 @@ function SetupTab() {
         </div>
       </Section>
 
-      {/* Agent skill */}
       <Section id="agent-skill" title="Agent skill">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
             Want your agent to change music for you? Install the codevator skill:
           </p>
           <CodeBlock copyText="npx skills add educlopez/codevator">npx skills add educlopez/codevator</CodeBlock>
+          <p>
+            Skills is an open registry for agent capabilities — learn more on{" "}
+            <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener noreferrer" className="text-olive-950 underline underline-offset-2 hover:text-olive-700">
+              GitHub
+            </a>.
+          </p>
           <p>
             Works across Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ other agents.
             Once installed, just ask:
@@ -151,7 +126,6 @@ function SetupTab() {
 function SoundsTab() {
   return (
     <>
-      {/* Sounds */}
       <Section id="sounds" title="Sounds">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -223,7 +197,6 @@ function SoundsTab() {
         </div>
       </Section>
 
-      {/* Custom sounds */}
       <Section id="custom-sounds" title="Custom sounds">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -245,7 +218,6 @@ function SoundsTab() {
         </div>
       </Section>
 
-      {/* Profiles */}
       <Section id="profiles" title="Profiles">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -269,7 +241,6 @@ function SoundsTab() {
 function ReferenceTab() {
   return (
     <>
-      {/* Commands */}
       <Section id="commands" title="Commands">
         <div className="flex flex-col gap-3">
           {[
@@ -302,7 +273,6 @@ function ReferenceTab() {
         </div>
       </Section>
 
-      {/* Menubar app */}
       <Section id="menubar" title="Menubar app">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -323,7 +293,6 @@ function ReferenceTab() {
         </div>
       </Section>
 
-      {/* Under the hood */}
       <Section id="how-it-works" title="Under the hood">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -353,7 +322,6 @@ function ReferenceTab() {
         </div>
       </Section>
 
-      {/* Configuration */}
       <Section id="configuration" title="Configuration">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
@@ -380,7 +348,6 @@ function ReferenceTab() {
         </div>
       </Section>
 
-      {/* Uninstall */}
       <Section id="uninstall" title="Uninstall">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>Remove hooks from your agent:</p>
@@ -390,43 +357,29 @@ function ReferenceTab() {
             at <code className="font-mono text-olive-950">~/.codevator/</code> are kept.
             Delete that folder manually for a full cleanup.
           </p>
+          <p>
+            Found a bug? Open an issue on{" "}
+            <a href="https://github.com/educlopez/codevator" target="_blank" rel="noopener noreferrer" className="text-olive-950 underline underline-offset-2 hover:text-olive-700">
+              GitHub
+            </a>.
+          </p>
         </div>
       </Section>
     </>
   );
 }
 
-const TAB_CONTENT: Record<TabKey, () => React.JSX.Element> = {
-  setup: SetupTab,
-  sounds: SoundsTab,
-  reference: ReferenceTab,
-};
+/* ── All tab panels (rendered in HTML for SEO, toggled client-side) ── */
 
-/* ── Main docs content with tabs ── */
+export const TAB_PANELS: { key: TabKey; content: React.ReactNode }[] = [
+  { key: "setup", content: <SetupTab /> },
+  { key: "sounds", content: <SoundsTab /> },
+  { key: "reference", content: <ReferenceTab /> },
+];
 
-function DocsContentInner() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const rawTab = searchParams.get("tab");
-  const activeTab: TabKey = isValidTab(rawTab) ? rawTab : "setup";
+/* ── Main docs content ── */
 
-  const handleTabChange = useCallback(
-    (tab: TabKey) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (tab === "setup") {
-        params.delete("tab");
-      } else {
-        params.set("tab", tab);
-      }
-      const query = params.toString();
-      router.replace(`/docs${query ? `?${query}` : ""}`, { scroll: false });
-    },
-    [searchParams, router],
-  );
-
-  const ActiveTabContent = TAB_CONTENT[activeTab];
-  const tocItems = TAB_TOC[activeTab];
-
+export function DocsContent() {
   return (
     <main>
       <Header alwaysVisible />
@@ -446,59 +399,12 @@ function DocsContentInner() {
           </p>
         </div>
 
-        {/* Tab bar */}
-        <div className="sticky top-16 z-30 bg-olive-100/80 backdrop-blur-md border-b border-olive-950/10 mb-12 overflow-x-auto -mx-6 px-6 lg:-mx-10 lg:px-10 pt-4">
-          <div className="flex gap-8">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => handleTabChange(tab.key)}
-                className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === tab.key
-                    ? "text-olive-950 border-b-2 border-olive-950"
-                    : "text-olive-500 hover:text-olive-700"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex gap-16">
-          {/* Table of contents — desktop sidebar */}
-          <nav className="hidden lg:block w-48 shrink-0 sticky top-36 self-start pt-4">
-            <ul className="flex flex-col gap-2.5">
-              {tocItems.map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={`#${item.id}`}
-                    className="text-sm text-olive-500 hover:text-olive-950 transition-colors"
-                  >
-                    {item.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Content */}
-          <div className="flex flex-col gap-16 min-w-0">
-            <ActiveTabContent />
-          </div>
-        </div>
+        {/* Client-side tab controller wraps all panels */}
+        <DocsTabs />
       </div>
 
       {/* Footer */}
       <Floor5Rooftop />
     </main>
-  );
-}
-
-export function DocsContent() {
-  return (
-    <Suspense>
-      <DocsContentInner />
-    </Suspense>
   );
 }
