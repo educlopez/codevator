@@ -4,7 +4,7 @@ import { DocsContent } from "./content";
 export const metadata: Metadata = {
   title: "Docs — Codevator",
   description:
-    "Installation, commands, configuration, and everything you need to know about Codevator.",
+    "Installation guide, CLI commands, configuration, and multi-agent setup for Codevator — background music for AI coding agents like Claude Code, Cursor, and more.",
   alternates: {
     canonical: "/docs",
   },
