@@ -78,7 +78,7 @@ export function Floor5Rooftop() {
         {/* Blurred placeholder */}
         <img
           src="/codevator-character-blur.jpeg"
-          alt=""
+          alt="Codevator elevator operator character"
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover scale-125 origin-center translate-x-[3%] translate-y-[5%]"
         />
@@ -87,7 +87,7 @@ export function Floor5Rooftop() {
         <div className="relative scale-125 origin-center translate-x-[3%] translate-y-[5%]">
           <img
             src="/codevator-character-poster.jpeg"
-            alt=""
+            alt="Codevator elevator operator character"
             aria-hidden
             className="w-full block"
           />

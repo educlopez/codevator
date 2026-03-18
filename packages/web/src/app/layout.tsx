@@ -46,7 +46,6 @@ export const metadata: Metadata = {
     title,
     description,
     type: "website",
-    url: siteUrl,
     siteName: "Codevator",
     images: [
       {
@@ -78,14 +77,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
+              "@type": "WebSite",
               name: "Codevator",
               description,
               url: siteUrl,
-              applicationCategory: "DeveloperApplication",
-              operatingSystem: "macOS, Linux",
-              downloadUrl: "https://www.npmjs.com/package/codevator",
-              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
               author: {
                 "@type": "Person",
                 name: "Eduardo Calvo Lopez",

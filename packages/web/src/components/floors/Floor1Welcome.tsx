@@ -12,9 +12,9 @@ export function Floor1Welcome() {
               <p className="text-sm font-semibold text-olive-950 mb-2">
                 What is Codevator?
               </p>
-              <h2 className="font-display text-3xl md:text-4xl text-olive-700 leading-snug tracking-tight text-pretty">
+              <h1 className="font-display text-3xl md:text-4xl text-olive-700 leading-snug tracking-tight text-pretty">
                 Your agent works. The silence grows. We fixed that.
-              </h2>
+              </h1>
               <p className="text-sm/7 text-olive-600">
                 One command. Terminal or macOS menubar. The elevator is ready when you are.
               </p>
