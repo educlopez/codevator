@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.13.0](https://github.com/educlopez/codevator/compare/v0.12.0...v0.13.0) (2026-03-19)
+
+
+### Bug Fixes
+
+* resolve all 28 Dependabot security alerts ([1747555](https://github.com/educlopez/codevator/commit/174755581d542eede2bbf14e619e4427fb6eee6c))
+* **web:** extend meta descriptions to 110-160 chars for SEO ([8e0c40a](https://github.com/educlopez/codevator/commit/8e0c40acff641ffcc0d792824dae043dbe489734))
+* **web:** make docs page SSR-friendly and add outgoing links ([4a431d3](https://github.com/educlopez/codevator/commit/4a431d38d44099f1273205b280c19866e8f39375))
+* **web:** replace claude-code with your-agent in terminal demos ([c5f9ec4](https://github.com/educlopez/codevator/commit/c5f9ec47d3a927934189eaecefe429852578066d))
+* **web:** resolve multiple Ahrefs SEO issues ([e0dd520](https://github.com/educlopez/codevator/commit/e0dd520419b44c00da3b93561b83ba33962fbac8))
+* **web:** show only built-in modes on landing with gallery link, fix avatars and roadmap ([7ac04d2](https://github.com/educlopez/codevator/commit/7ac04d23128da4e714df353247129d90e092bad6))
+
+
+### Features
+
+* **web:** refactor docs into tabbed layout with sticky navigation ([36d50f0](https://github.com/educlopez/codevator/commit/36d50f0fe066216416f75e3ebdf1b816afeadfaa))
+
 # [0.12.0](https://github.com/educlopez/codevator/compare/v0.11.0...v0.12.0) (2026-03-15)
 
 
