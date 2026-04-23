@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CopyCommand } from "../CopyCommand";
+import { FooterStrip } from "../Footer";
 
 export function Floor5Rooftop() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -70,12 +71,11 @@ export function Floor5Rooftop() {
   return (
     <div ref={containerRef}>
       {/* Mobile: content in normal flow above image */}
-      <div className="sm:hidden pb-8">
-        {content}
-      </div>
+      <div className="sm:hidden pb-8">{content}</div>
 
       <div className="relative overflow-hidden">
-        {/* Blurred placeholder */}
+        {/* Blurred placeholder — fills the full container, including the
+            footer-strip zone so the cross-promo sits on the same backdrop. */}
         <img
           src="/codevator-character-blur.jpeg"
           alt="Codevator elevator operator character"
@@ -83,41 +83,64 @@ export function Floor5Rooftop() {
           className="absolute inset-0 w-full h-full object-cover scale-125 origin-center translate-x-[3%] translate-y-[5%]"
         />
 
-        {/* Scene layer: poster + cropped character video share the same transform */}
-        <div className="relative scale-125 origin-center translate-x-[3%] translate-y-[5%]">
-          <img
-            src="/codevator-character-poster.jpeg"
-            alt="Codevator elevator operator character"
-            aria-hidden
-            className="w-full block"
-          />
-          {/* Cropped video positioned exactly where the character is in the poster */}
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="none"
-            onCanPlay={() => setVideoReady(true)}
-            className={`absolute transition-opacity duration-700 ${videoReady ? "opacity-100" : "opacity-0"}`}
-            style={{
-              left: `${(730 / 1904) * 100}%`,
-              top: `${(550 / 1088) * 100}%`,
-              width: `${(300 / 1904) * 100}%`,
-              height: `${(350 / 1088) * 100}%`,
-              mask: "radial-gradient(ellipse 70% 65% at center 55%, black 40%, transparent 100%)",
-              WebkitMask: "radial-gradient(ellipse 70% 65% at center 55%, black 40%, transparent 100%)",
-            }}
-          />
+        {/* Stage — scaled character scene + desktop hero overlay.
+            Wrapped so its height is bounded by the poster alone; the footer
+            strip sibling below shares the blur backdrop but does not affect
+            the stage overlay's layout. */}
+        <div className="relative">
+          <div className="relative scale-125 origin-center translate-x-[3%] translate-y-[5%]">
+            <img
+              src="/codevator-character-poster.jpeg"
+              alt="Codevator elevator operator character"
+              aria-hidden
+              className="w-full block"
+            />
+            {/* Cropped video positioned exactly where the character is in the poster */}
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="none"
+              onCanPlay={() => setVideoReady(true)}
+              className={`absolute transition-opacity duration-700 ${videoReady ? "opacity-100" : "opacity-0"}`}
+              style={{
+                left: `${(730 / 1904) * 100}%`,
+                top: `${(550 / 1088) * 100}%`,
+                width: `${(300 / 1904) * 100}%`,
+                height: `${(350 / 1088) * 100}%`,
+                mask: "radial-gradient(ellipse 70% 65% at center 55%, black 40%, transparent 100%)",
+                WebkitMask:
+                  "radial-gradient(ellipse 70% 65% at center 55%, black 40%, transparent 100%)",
+              }}
+            />
+          </div>
+
+          {/* Gradient from site bg into image */}
+          <div className="absolute inset-x-0 top-0 h-60 bg-gradient-to-b from-olive-100 to-transparent pointer-events-none z-10" />
+
+          {/* Desktop: content overlaid on image */}
+          <div className="hidden sm:flex absolute inset-0 z-20 items-center justify-center -translate-y-[10%]">
+            {content}
+          </div>
         </div>
 
-        {/* Gradient from site bg into image */}
-        <div className="absolute inset-x-0 top-0 h-60 bg-gradient-to-b from-olive-100 to-transparent pointer-events-none z-10" />
-
-        {/* Desktop: content overlaid on image */}
-        <div className="hidden sm:flex absolute inset-0 z-20 items-center justify-center -translate-y-[10%]">
-          {content}
+        {/* Footer zone — solid olive-200 (same cream as the full Footer on
+            docs/sounds/roadmap), preceded by a tall bridge gradient that
+            fades the blur image into the cream. Keeps the backdrop uniform
+            (no patchiness from the blur showing through) and ties the home
+            footer tone to the rest of the site. */}
+        <div className="relative z-20">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -top-64 h-64 bg-gradient-to-b from-transparent to-olive-200"
+          />
+          <div className="relative bg-olive-200">
+            <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:px-10">
+              <FooterStrip tone="light" showBrand />
+            </div>
+          </div>
         </div>
       </div>
     </div>
