@@ -47,7 +47,7 @@ const developColumn: FooterColumn = {
 };
 
 const byEduardoColumn: FooterColumn = {
-  title: "By Eduardo",
+  title: "By the maker",
   links: [
     {
       label: "smoothui.dev",
