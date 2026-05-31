@@ -26,3 +26,9 @@ overrides:
   "handlebars@>=4.0.0 <4.7.9": "4.7.9"
   "brace-expansion@<1.1.13": "1.1.13"
   "brace-expansion@>=4.0.0 <5.0.5": "5.0.5"
+
+# SECURITY: supply-chain hardening (npm-security-best-practices)
+minimumReleaseAge: 2880
+minimumReleaseAgeExclude:
+  - "@educlopez/*"
+blockExoticSubdeps: true
