@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Instrument_Serif, Inter, IBM_Plex_Mono, Caveat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ActivityBeacon } from "@/components/ActivityBeacon";
+import { WebMcpScript } from "@/components/WebMcpScript";
+import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -31,17 +33,19 @@ const caveat = Caveat({
   display: "swap",
 });
 
-const siteUrl = "https://codevator.dev";
-const title = "Codevator — Background music for AI coding agents";
-const description =
-  "Background music that plays while your AI agent codes and stops when it's done. 15 sounds, 7 agents supported. Free and open source.";
+const title = SITE_TITLE;
+const description = SITE_DESCRIPTION;
 
 export const metadata: Metadata = {
   title,
   description,
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: "/",
+    types: {
+      "text/markdown": "/",
+      "application/linkset+json": "/.well-known/api-catalog",
+    },
   },
   openGraph: {
     title,
@@ -72,7 +76,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${instrumentSerif.variable} ${inter.variable} ${ibmPlexMono.variable} ${caveat.variable}`}>
+      <head>
+        <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json" />
+        <link rel="service-desc" href="/openapi.json" type="application/vnd.oai.openapi+json" />
+        <link rel="service-doc" href="/docs" type="text/html" />
+        <link rel="describedby" href="/.well-known/ai-catalog.json" type="application/json" />
+        <link rel="describedby" href="/.well-known/agent-skills/index.json" type="application/json" />
+        <link rel="alternate" type="text/markdown" href="/" />
+      </head>
       <body className="font-sans">
+        <WebMcpScript />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -81,7 +94,7 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "Codevator",
               description,
-              url: siteUrl,
+              url: SITE_URL,
               author: {
                 "@type": "Person",
                 name: "Eduardo Calvo Lopez",
