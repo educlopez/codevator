@@ -18,26 +18,29 @@ function isHtmlPage(pathname: string): boolean {
   return HTML_PAGES.has(normalized);
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (prefersMarkdown(request.headers.get("accept"))) {
     const markdown = getMarkdownForPath(pathname);
     if (markdown) {
       const tokens = estimateMarkdownTokens(markdown);
-      return new NextResponse(markdown, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/markdown; charset=utf-8",
-          "Content-Length": String(new TextEncoder().encode(markdown).byteLength),
-          Vary: "Accept",
-          "x-markdown-tokens": String(tokens),
-          "Content-Signal": CONTENT_SIGNAL,
-          "Cache-Control": "public, max-age=3600",
-          ...CORS_HEADERS,
-          Link: DISCOVERY_LINK_HEADER,
-        },
-      });
+      const headers: Record<string, string> = {
+        "Content-Type": "text/markdown; charset=utf-8",
+        "Content-Length": String(new TextEncoder().encode(markdown).byteLength),
+        Vary: "Accept",
+        "x-markdown-tokens": String(tokens),
+        "Content-Signal": CONTENT_SIGNAL,
+        "Cache-Control": "public, max-age=3600",
+        ...CORS_HEADERS,
+        Link: DISCOVERY_LINK_HEADER,
+      };
+
+      if (request.method === "HEAD") {
+        return new NextResponse(null, { status: 200, headers });
+      }
+
+      return new NextResponse(markdown, { status: 200, headers });
     }
   }
 
