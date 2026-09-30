@@ -2,7 +2,7 @@ import { getConfig, setConfig, MODES, type CodevatorConfig, type SoundProfile } 
 import { isValidMode } from "./config.js";
 import { runDoctor } from "./doctor.js";
 import { importSound, removeSound } from "./import.js";
-import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, getSoundFiles, isSpotifyRunning, detectPlayer } from "./player.js";
+import { play, stop, sessionEnd, shutdown, isPlaying, getSoundFile, getSoundFiles, isSpotifyRunning, detectPlayer, buildArgs } from "./player.js";
 import { fetchManifest, downloadSound, isInstalled, listInstalled, getCachedManifest, groupByCategory, pickRandom, CATEGORY_ORDER, CATEGORY_LABELS, type SoundEntry } from "./registry.js";
 import { setupHooks, removeHooks } from "./setup.js";
 import { getAdapter, listAdapters } from "./agents/index.js";
@@ -675,14 +675,11 @@ export async function runPreview(mode: string | undefined): Promise<void> {
 
   const player = detectPlayer();
   const config = getConfig();
-  const volume = config.volume / 100;
 
   p.log.step(`Previewing ${pc.cyan(mode)} for 5 seconds...`);
 
   const { spawn } = await import("node:child_process");
-  const args = player === "afplay"
-    ? ["-v", String(volume), files[0]]
-    : [files[0]];
+  const args = buildArgs(player, config.volume, files[0]);
 
   const child = spawn(player, args, { stdio: "ignore" });
 

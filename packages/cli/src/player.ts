@@ -29,6 +29,10 @@ function getDaemonScriptFile(): string {
   return path.join(getConfigDir(), "daemon.js");
 }
 
+function getLinuxPlayerStateFile(): string {
+  return path.join(getConfigDir(), "player-state.json");
+}
+
 function getLockFile(): string {
   return path.join(getConfigDir(), "player.lock");
 }
@@ -472,10 +476,16 @@ export function detectPlayer(): string {
   }
 }
 
-function buildArgs(player: string, volume: number, filePath: string): string[] {
+/** Build player arguments. `volume` is a percentage (0-100). */
+export function buildArgs(player: string, volume: number, filePath: string): string[] {
   if (player === "afplay") {
     return ["-v", String(volume / 100), filePath];
   }
+  if (player === "paplay") {
+    // paplay volume is linear, 0-65536 (65536 = 100%)
+    return [`--volume=${Math.round((volume / 100) * 65536)}`, filePath];
+  }
+  // aplay has no volume control
   return [filePath];
 }
 
@@ -844,7 +854,7 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
-function spawnLinuxPlayer(soundFiles: string[], volume: number): void {
+function spawnLinuxPlayer(soundFiles: string[], volume: number, mode: string): void {
   const player = detectPlayer();
 
   let loopBody: string;
@@ -869,6 +879,17 @@ function spawnLinuxPlayer(soundFiles: string[], volume: number): void {
     const configDir = getConfigDir();
     fs.mkdirSync(configDir, { recursive: true });
     fs.writeFileSync(getPidFile(), String(child.pid));
+    fs.writeFileSync(getLinuxPlayerStateFile(), JSON.stringify({ mode, volume }));
+  }
+}
+
+/** True if the running Linux player was started with different settings. */
+function linuxPlayerSettingsChanged(mode: string, volume: number): boolean {
+  try {
+    const state = JSON.parse(fs.readFileSync(getLinuxPlayerStateFile(), "utf-8"));
+    return state.mode !== mode || state.volume !== volume;
+  } catch {
+    return true;
   }
 }
 
@@ -881,6 +902,7 @@ function killLinuxPlayer(): void {
     // Already dead
   }
   try { fs.unlinkSync(pidFile); } catch {}
+  try { fs.unlinkSync(getLinuxPlayerStateFile()); } catch {}
 }
 
 export function isLinuxPlayerRunning(): boolean {
@@ -978,10 +1000,13 @@ export async function play(): Promise<void> {
         startDaemon(soundFiles, volume, config.mode);
       }
     } else {
-      // Linux: only restart if not already running
-      if (!isLinuxPlayerRunning()) {
-        spawnLinuxPlayer(soundFiles, volume);
+      // Linux: players can't change volume mid-stream, so restart when
+      // the mode or volume differs from what the running player uses
+      if (isLinuxPlayerRunning()) {
+        if (!linuxPlayerSettingsChanged(config.mode, volume)) return;
+        killLinuxPlayer();
       }
+      spawnLinuxPlayer(soundFiles, volume, config.mode);
     }
   } finally {
     releaseLock();

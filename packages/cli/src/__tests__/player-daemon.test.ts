@@ -46,9 +46,10 @@ function simulateDaemon(mode: string, playing = true) {
 }
 
 /** Simulate a running Linux player by writing PID file with our own PID. */
-function simulateLinuxPlayer() {
+function simulateLinuxPlayer(settings = { mode: "elevator", volume: 0.5 }) {
   fs.mkdirSync(TEST_CONFIG_DIR, { recursive: true });
   fs.writeFileSync(pidFile(), String(process.pid));
+  fs.writeFileSync(path.join(TEST_CONFIG_DIR, "player-state.json"), JSON.stringify(settings));
 }
 
 /** Register a fake session heartbeat. */
@@ -229,6 +230,27 @@ describe("play() — Linux dedup", () => {
 
     // spawn should NOT have been called — player already running
     expect(mockSpawn).not.toHaveBeenCalled();
+  });
+
+  it("on linux: restarts player when volume changed", async () => {
+    Object.defineProperty(process, "platform", { value: "linux" });
+    simulateLinuxPlayer({ mode: "elevator", volume: 0.5 });
+    setSessionId("session-linux-volume");
+    setConfig({ enabled: true, mode: "elevator", volume: 80 });
+
+    // The fake player PID is this process — don't actually signal it
+    const realKill = process.kill.bind(process);
+    const killSpy = vi.spyOn(process, "kill").mockImplementation(((pid: number, sig?: string | number) =>
+      sig === "SIGTERM" ? true : realKill(pid, sig)) as typeof process.kill);
+
+    mockSpawn.mockClear();
+    await play();
+
+    expect(killSpy).toHaveBeenCalledWith(-process.pid, "SIGTERM");
+    expect(mockSpawn).toHaveBeenCalled();
+    const state = JSON.parse(fs.readFileSync(path.join(TEST_CONFIG_DIR, "player-state.json"), "utf-8"));
+    expect(state).toEqual({ mode: "elevator", volume: 0.8 });
+    killSpy.mockRestore();
   });
 
   it("on linux: spawns player if none running", async () => {
