@@ -9,7 +9,7 @@ vi.mock("node:child_process", async () => {
   return { ...actual, execSync: vi.fn(actual.execSync) };
 });
 
-import { detectPlayer, getPidFile, isPlaying, isSpotifyRunning, getSpotifyOriginalVolumeFile } from "../player.js";
+import { detectPlayer, buildArgs, getPidFile, isPlaying, isSpotifyRunning, getSpotifyOriginalVolumeFile } from "../player.js";
 
 const TEST_DIR = path.join(os.tmpdir(), "codevator-player-test-" + Date.now());
 const TEST_CONFIG_DIR = path.join(TEST_DIR, ".codevator");
@@ -30,6 +30,22 @@ describe("detectPlayer", () => {
     // On macOS should return afplay, on Linux paplay or aplay
     expect(typeof player).toBe("string");
     expect(player.length).toBeGreaterThan(0);
+  });
+});
+
+describe("buildArgs", () => {
+  it("passes volume to afplay as a 0-1 fraction", () => {
+    expect(buildArgs("afplay", 70, "/s.mp3")).toEqual(["-v", "0.7", "/s.mp3"]);
+  });
+
+  it("passes volume to paplay on its 0-65536 scale", () => {
+    expect(buildArgs("paplay", 50, "/s.mp3")).toEqual(["--volume=32768", "/s.mp3"]);
+    expect(buildArgs("paplay", 100, "/s.mp3")).toEqual(["--volume=65536", "/s.mp3"]);
+    expect(buildArgs("paplay", 0, "/s.mp3")).toEqual(["--volume=0", "/s.mp3"]);
+  });
+
+  it("passes only the file to aplay", () => {
+    expect(buildArgs("aplay", 70, "/s.wav")).toEqual(["/s.wav"]);
   });
 });
 

@@ -63,6 +63,7 @@ vi.mock("../player.js", () => ({
   getSoundFiles: vi.fn(),
   isSpotifyRunning: vi.fn(),
   detectPlayer: vi.fn(),
+  buildArgs: vi.fn((_player: string, _volume: number, file: string) => [file]),
 }));
 
 vi.mock("../registry.js", () => ({
