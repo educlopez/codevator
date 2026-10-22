@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 // --- Step definitions ---
 
@@ -145,10 +145,8 @@ export function TerminalSimulation() {
   const { steps: STEPS, revealTimes: REVEAL_TIMES } = TIMELINES[seqIndex];
   const fileStats = FILE_STATS[seqIndex];
 
-  const startLoop = useCallback(() => {
+  useEffect(() => {
     startRef.current = performance.now();
-    setElapsed(0);
-    setPhase("fading-in");
     fadeTimerRef.current = setTimeout(() => setPhase("playing"), 700);
 
     const timeline = TIMELINES[loopKey % TIMELINES.length];
@@ -160,6 +158,8 @@ export function TerminalSimulation() {
       if (ms > timeline.totalDuration + 3500) {
         setPhase("fading-out");
         fadeTimerRef.current = setTimeout(() => {
+          setElapsed(0);
+          setPhase("fading-in");
           setLoopKey((k) => k + 1);
         }, 1000);
         return;
@@ -169,15 +169,12 @@ export function TerminalSimulation() {
     }
 
     rafRef.current = requestAnimationFrame(tick);
-  }, [loopKey]);
 
-  useEffect(() => {
-    startLoop();
     return () => {
       cancelAnimationFrame(rafRef.current);
       clearTimeout(fadeTimerRef.current);
     };
-  }, [loopKey, startLoop]);
+  }, [loopKey]);
 
   // Count revealed items and scroll when new ones appear
   let revealedCount = 0;
