@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { ReactNode } from "react";
 
 /* ───────────────────────────────────────────
@@ -423,10 +423,8 @@ function CrtTerminal() {
   const idx = loopKey % CRT_TIMELINES.length;
   const { steps, times, total } = CRT_TIMELINES[idx];
 
-  const startLoop = useCallback(() => {
+  useEffect(() => {
     startRef.current = performance.now();
-    setElapsed(0);
-    setPhase("fading-in");
     fadeRef.current = setTimeout(() => setPhase("playing"), 500);
 
     const tl = CRT_TIMELINES[loopKey % CRT_TIMELINES.length];
@@ -435,18 +433,22 @@ function CrtTerminal() {
       setElapsed(ms);
       if (ms > tl.total + 3000) {
         setPhase("fading-out");
-        fadeRef.current = setTimeout(() => setLoopKey((k) => k + 1), 800);
+        fadeRef.current = setTimeout(() => {
+          setElapsed(0);
+          setPhase("fading-in");
+          setLoopKey((k) => k + 1);
+        }, 800);
         return;
       }
       rafRef.current = requestAnimationFrame(tick);
     }
     rafRef.current = requestAnimationFrame(tick);
-  }, [loopKey]);
 
-  useEffect(() => {
-    startLoop();
-    return () => { cancelAnimationFrame(rafRef.current); clearTimeout(fadeRef.current); };
-  }, [loopKey, startLoop]);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      clearTimeout(fadeRef.current);
+    };
+  }, [loopKey]);
 
   let revealed = 0;
   for (const t of times) { if (elapsed >= t) revealed++; }
