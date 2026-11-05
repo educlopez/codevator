@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter, IBM_Plex_Mono, Caveat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
-import { ActivityBeacon } from "@/components/ActivityBeacon";
 import { WebMcpScript } from "@/components/WebMcpScript";
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
@@ -104,7 +103,6 @@ export default function RootLayout({
           }}
         />
         {children}
-        <ActivityBeacon />
         <Analytics />
         <script defer src="https://cloud.umami.is/script.js" data-website-id="fa4a31fe-398a-4936-925f-c6e507c74793" />
       </body>
