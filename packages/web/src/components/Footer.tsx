@@ -69,7 +69,7 @@ const byEduardoColumn: FooterColumn = {
     },
     {
       label: "ui-craft",
-      href: "https://skills.smoothui.dev",
+      href: "https://ui-craft.smoothui.dev",
       external: true,
       description: "Claude skill for crafting UI",
     },
