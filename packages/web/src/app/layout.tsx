@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Serif, Inter, IBM_Plex_Mono, Caveat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { WebMcpScript } from "@/components/WebMcpScript";
-import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
+import { OG_IMAGE, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -51,20 +51,14 @@ export const metadata: Metadata = {
     description,
     type: "website",
     siteName: "Codevator",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Codevator — Background music for AI coding agents, with terminal UI and 15 built-in sounds",
-      },
-    ],
+    url: "/",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/og-image.jpg"],
+    images: [OG_IMAGE.url],
   },
 };
 
@@ -81,7 +75,6 @@ export default function RootLayout({
         <link rel="service-doc" href="/docs" type="text/html" />
         <link rel="describedby" href="/.well-known/ai-catalog.json" type="application/json" />
         <link rel="describedby" href="/.well-known/agent-skills/index.json" type="application/json" />
-        <link rel="alternate" type="text/markdown" href="/" />
       </head>
       <body className="font-sans">
         <WebMcpScript />

@@ -25,7 +25,7 @@ export type TabKey = "setup" | "sounds" | "reference";
 
 export const TAB_TOC: Record<TabKey, { id: string; label: string }[]> = {
   setup: [
-    { id: "quick-start", label: "Quick start" },
+    { id: "install", label: "Quick start" },
     { id: "multi-agent", label: "Multi-agent support" },
     { id: "agent-skill", label: "Agent skill" },
   ],
@@ -48,7 +48,7 @@ export const TAB_TOC: Record<TabKey, { id: string; label: string }[]> = {
 function SetupTab() {
   return (
     <>
-      <Section id="quick-start" title="Quick start">
+      <Section id="install" title="Quick start">
         <div className="flex flex-col gap-4 text-sm/7 text-olive-600">
           <p>
             Install{" "}
