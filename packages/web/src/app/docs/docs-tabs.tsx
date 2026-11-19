@@ -14,26 +14,14 @@ function isValidTab(value: string | null): value is TabKey {
   return value === "setup" || value === "sounds" || value === "reference";
 }
 
-function DocsTabsInner() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const rawTab = searchParams.get("tab");
-  const activeTab: TabKey = isValidTab(rawTab) ? rawTab : "setup";
+function DocsTabsView({
+  activeTab,
+  onTabChange,
+}: {
+  activeTab: TabKey;
+  onTabChange?: (tab: TabKey) => void;
+}) {
   const tocItems = TAB_TOC[activeTab];
-
-  const handleTabChange = useCallback(
-    (tab: TabKey) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (tab === "setup") {
-        params.delete("tab");
-      } else {
-        params.set("tab", tab);
-      }
-      const query = params.toString();
-      router.replace(`/docs${query ? `?${query}` : ""}`, { scroll: false });
-    },
-    [searchParams, router],
-  );
 
   return (
     <>
@@ -43,7 +31,7 @@ function DocsTabsInner() {
           {TABS.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => handleTabChange(tab.key)}
+              onClick={() => onTabChange?.(tab.key)}
               className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.key
                   ? "text-olive-950 border-b-2 border-olive-950"
@@ -91,9 +79,35 @@ function DocsTabsInner() {
   );
 }
 
+function DocsTabsInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const rawTab = searchParams.get("tab");
+  const activeTab: TabKey = isValidTab(rawTab) ? rawTab : "setup";
+
+  const handleTabChange = useCallback(
+    (tab: TabKey) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (tab === "setup") {
+        params.delete("tab");
+      } else {
+        params.set("tab", tab);
+      }
+      const query = params.toString();
+      router.replace(`/docs${query ? `?${query}` : ""}`, { scroll: false });
+    },
+    [searchParams, router],
+  );
+
+  return <DocsTabsView activeTab={activeTab} onTabChange={handleTabChange} />;
+}
+
 export function DocsTabs() {
+  // useSearchParams bails out of static prerendering, so the fallback is what
+  // lands in the server HTML. It renders every panel with the default tab
+  // active, keeping the full docs text and section anchors crawlable.
   return (
-    <Suspense>
+    <Suspense fallback={<DocsTabsView activeTab="setup" />}>
       <DocsTabsInner />
     </Suspense>
   );
